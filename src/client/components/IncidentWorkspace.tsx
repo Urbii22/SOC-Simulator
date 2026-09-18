@@ -42,6 +42,7 @@ function Overview({ scenario, notes, setNotes, saveNotes }: { scenario: Scenario
       <section className="overview-main">
         <div className="section-heading"><div><span className="eyebrow">Contexto operativo</span><h3>Lo que sabemos</h3></div><Clock3 size={18} /></div>
         <p className="overview-description">{scenario.description}</p>
+        <div className="business-context"><span className="eyebrow">Contexto de negocio</span><p>{scenario.businessContext}</p></div>
         <div className="fact-strip"><div><UserRound size={16} /><span>Usuario</span><strong>{scenario.user}</strong></div><div><Network size={16} /><span>Activo</span><strong>{scenario.host}</strong></div><div><ShieldAlert size={16} /><span>Alertas</span><strong>{scenario.alertCount}</strong></div></div>
         <div className="alerts-block"><span className="eyebrow">Señales disparadas</span>{scenario.alerts.map((alert) => <div key={alert} className="alert-line"><span aria-hidden="true">!</span>{alert}</div>)}</div>
         <div className="notes-block"><div className="section-heading compact"><div><span className="eyebrow">Privado para este caso</span><h3>Notas del analista</h3></div><button className="icon-action" onClick={saveNotes}><Save size={15} />Guardar</button></div><textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Registra hipótesis, pivotes y hallazgos…" /></div>

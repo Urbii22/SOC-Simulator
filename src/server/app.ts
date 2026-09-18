@@ -83,6 +83,7 @@ export function createApp(options: { stateFile?: string } = {}) {
     const state = store.get(definition.id);
     const detail: ScenarioDetail = {
       ...toSummary(definition.id, store), briefing: definition.briefing, alerts: definition.alerts,
+      businessContext: definition.businessContext,
       users: definition.users, hosts: definition.hosts, events: generateScenarioEvents(definition),
       questions: definition.questions, visibleIocs: [], mitre: [], notes: state.notes,
     };
@@ -104,6 +105,12 @@ export function createApp(options: { stateFile?: string } = {}) {
     if (!definition) return response.status(404).json({ error: 'Scenario not found' });
     const parsed = submitSchema.safeParse(request.body);
     if (!parsed.success) return response.status(400).json({ error: 'Invalid submission', details: parsed.error.flatten() });
+    const incomplete = definition.questions.some((question) => {
+      if (!Object.hasOwn(parsed.data.answers, question.id)) return true;
+      const value = parsed.data.answers[question.id];
+      return typeof value === 'string' && value.trim().length === 0;
+    });
+    if (incomplete) return response.status(400).json({ error: 'Complete every investigation question before submission' });
     let earned = 0;
     const feedback = definition.questions.map((question) => {
       const key = definition.answers[question.id];
@@ -117,6 +124,7 @@ export function createApp(options: { stateFile?: string } = {}) {
       explanation: definition.explanation, reasoning: definition.reasoning,
       timeline: getAttackEvents(definition),
       iocs: definition.iocs, mitre: definition.mitre, queries: definition.queries, responseActions: definition.responseActions,
+      remediationActions: definition.remediationActions,
     };
     store.update(definition.id, { progress: 100 });
     response.json(result);

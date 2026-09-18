@@ -17,14 +17,25 @@ const benignTemplates: Array<{ source: EventSource; code: string; action: string
   { source: 'network' as const, code: 'FLOW', action: 'network_flow', message: 'TLS connection to approved update service', details: { port: 443 } },
   { source: 'windows' as const, code: '4624', action: 'login', message: 'Successful network logon type 3', details: { logon_type: 3 } },
   { source: 'linux' as const, code: 'CRON', action: 'scheduled_job', message: 'Hourly log rotation completed', details: { process: 'logrotate' } },
+  { source: 'firewall', code: 'ALLOW', action: 'connection_allowed', message: 'Approved outbound TLS session', details: { destination_port: 443, policy: 'corp-egress' } },
+  { source: 'endpoint', code: 'PROC-START', action: 'process_start', message: 'Signed inventory agent completed health check', details: { process: 'inventory-agent.exe', signed: true } },
+  { source: 'email', code: 'MSG-DELIVERED', action: 'mail_deliver', message: 'Internal notification delivered after policy checks', details: { attachment_count: 0 } },
+  { source: 'cloud', code: 'AUDIT-SUCCESS', action: 'cloud_api', message: 'Approved SaaS API request from managed session', details: { mfa: true } },
+  { source: 'windows', code: '4688', action: 'process_start', message: 'Signed corporate updater started', details: { process: 'corp-update.exe', signed: true } },
+  { source: 'sysmon', code: '3', action: 'network_connection', message: 'Browser connected to corporate SaaS', details: { process: 'msedge.exe', destination_port: 443 } },
+  { source: 'dns', code: 'DNS-Q', action: 'dns_query', message: 'Query A time.windows.example', details: { qtype: 'A' } },
 ];
 
 export function generateScenarioEvents(definition: ScenarioDefinition, seed = 20260918): SecurityEvent[] {
   const random = seeded(seed + definition.id.length * 97);
   const day = scenarioDefinitionsIndex(definition.id) + 1;
   const base = new Date(`2026-09-${String(day).padStart(2, '0')}T08:00:00.000Z`);
-  const noise: SecurityEvent[] = Array.from({ length: 42 }, (_, index) => {
-    const template = benignTemplates[Math.floor(random() * benignTemplates.length)];
+  const selectedTemplates = definition.noiseSources?.length
+    ? benignTemplates.filter((template) => definition.noiseSources!.includes(template.source))
+    : benignTemplates.slice(0, 6);
+  const templates = selectedTemplates.length ? selectedTemplates : benignTemplates;
+  const noise: SecurityEvent[] = Array.from({ length: definition.noiseCount ?? 42 }, (_, index) => {
+    const template = templates[Math.floor(random() * templates.length)];
     const host = definition.hosts[Math.floor(random() * definition.hosts.length)];
     const user = definition.users[Math.floor(random() * definition.users.length)];
     const timestamp = new Date(base.getTime() + (index * 1.35 + random()) * 60_000).toISOString();
@@ -50,6 +61,14 @@ export function getAttackEvents(definition: ScenarioDefinition, events = generat
 }
 
 function scenarioDefinitionsIndex(id: string): number {
-  const ids = ['ssh-brute-force', 'password-spraying', 'credential-stuffing', 'suspicious-powershell', 'phishing-payload', 'dns-tunneling', 'malware-beaconing', 'webshell', 'privilege-escalation', 'data-exfiltration'];
+  const ids = [
+    'ssh-brute-force', 'password-spraying', 'credential-stuffing', 'suspicious-powershell', 'phishing-payload',
+    'dns-tunneling', 'malware-beaconing', 'webshell', 'privilege-escalation', 'data-exfiltration',
+    'suspicious-rdp-login', 'account-lockout', 'web-directory-bruteforce', 'suspicious-scheduled-task', 'browser-download',
+    'phishing-powershell', 'web-account-privilege-abuse', 'suspicious-smb', 'dns-beaconing', 'credential-dumping',
+    'lateral-movement-remote-services', 'registry-run-keys', 'initial-access-execution-persistence', 'spray-compromise-recon',
+    'web-exploit-webshell-command', 'endpoint-c2-exfiltration', 'phishing-credential-cloud-abuse', 'ambiguous-admin-activity',
+    'possible-data-exfiltration', 'mixed-alert-incident',
+  ];
   return Math.max(0, ids.indexOf(id));
 }

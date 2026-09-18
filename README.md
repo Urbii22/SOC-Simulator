@@ -1,13 +1,13 @@
 # SOC Analyst Training Lab
 
-Laboratorio local, seguro y reproducible para practicar triage, investigación y respuesta a incidentes con telemetría sintética. Incluye una consola SOC web, diez escenarios completos, evaluación automática, datasets NDJSON y un entorno opcional Elasticsearch/Kibana.
+Laboratorio local, seguro y reproducible para practicar triage, investigación y respuesta a incidentes con telemetría sintética. Incluye una consola SOC web, 30 escenarios completos, evaluación automática, datasets NDJSON y un entorno opcional Elasticsearch/Kibana.
 
 > Todo el contenido es sintético. El proyecto no ejecuta malware, no genera tráfico ofensivo y no se conecta a objetivos externos.
 
 ## Qué incluye
 
-- 10 escenarios: brute force SSH, password spraying, credential stuffing, PowerShell, phishing, DNS tunneling, beaconing, webshell, escalada de privilegios y exfiltración.
-- 460 eventos reproducibles con ruido benigno y fuentes Windows, Sysmon, Linux, DNS, HTTP, autenticación, red y Suricata.
+- 30 escenarios progresivos: fundamentos, correlación multifuente, cadenas multi-stage y triage ambiguo.
+- 2.946 eventos reproducibles con ruido benigno y 12 fuentes: Windows, Sysmon, Linux, DNS, HTTP, autenticación, red, Suricata, firewall, endpoint, correo y cloud.
 - Flujo de analista: cola, severidad, estados, evidencias, notas, preguntas y resolución explicada.
 - Referencias KQL, SPL y Sigma por escenario.
 - API validada, persistencia local y exportación NDJSON.
@@ -48,7 +48,7 @@ Modo SIEM completo (recomendados 4 GB de RAM libres):
 docker compose --profile siem up --build
 ```
 
-Cuando Elasticsearch esté disponible, indexa los 460 eventos:
+Cuando Elasticsearch esté disponible, indexa los 2.946 eventos:
 
 ```bash
 curl -X POST http://localhost:3001/api/elastic/sync
@@ -68,6 +68,7 @@ Kibana queda en [http://localhost:5601](http://localhost:5601). Importa `infra/k
 |---|---|
 | `npm run dev` | API y web con recarga |
 | `npm run generate` | Genera un NDJSON por escenario en `datasets/` |
+| `npm run validate:scenarios` | Valida determinismo, evidencias, IOC, MITRE, consultas y coherencia |
 | `npm test` | Ejecuta la suite de pruebas |
 | `npm run typecheck` | TypeScript estricto en cliente y servidor |
 | `npm run lint` | ESLint |
@@ -124,6 +125,7 @@ Los cuerpos de escritura se validan con Zod y tienen límites de tamaño. La API
 - [Guía del instructor](docs/INSTRUCTOR_GUIDE.md)
 - [Crear escenarios](docs/CREATING_SCENARIOS.md)
 - [Catálogo de escenarios](docs/SCENARIOS.md)
+- [Matriz de cobertura](docs/COVERAGE_MATRIX.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 
 ## Seguridad y alcance

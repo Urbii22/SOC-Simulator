@@ -104,6 +104,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--faint); }
 .section-heading.compact h3 { font-size: 15px; }
 .overview-description { max-width: 780px; margin: 20px 0; color: #b8c5ca; font-size: 14px; line-height: 1.65; }
+.business-context { margin: -6px 0 20px; padding: 12px 14px; border-left: 2px solid var(--line-bright); background: rgba(20,38,46,.45); }.business-context p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .fact-strip { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); background: var(--ink); }
 .fact-strip div { min-width: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 9px; padding: 14px; border-right: 1px solid var(--line); }
 .fact-strip div:last-child { border: 0; }
@@ -172,6 +173,7 @@ td strong, td small { display: block; } td strong { color: #c9d3d6; font-weight:
 .resolution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 28px 0; }.plain-list, .action-list { margin: 10px 0 0; padding: 0; list-style: none; }.plain-list li { display: grid; gap: 3px; padding: 8px 0; border-top: 1px solid var(--line); }.plain-list code { color: var(--amber); font-size: 10px; }.plain-list span, .action-list li { color: var(--muted); font-size: 10px; }.action-list { counter-reset: action; }.action-list li { counter-increment: action; padding: 8px 0; border-top: 1px solid var(--line); }.action-list li::before { content: counter(action, decimal-leading-zero); margin-right: 9px; color: var(--cyan); font: 9px var(--mono); }
 .query-reference h4 { margin: 14px 0 6px; color: var(--muted); font: 600 10px var(--mono); }.query-reference > code { display: block; padding: 9px 10px; border-top: 1px solid var(--line); background: var(--ink); color: #afc7ce; font-size: 10px; }.query-reference details { margin-top: 14px; border: 1px solid var(--line); }.query-reference summary { display: flex; align-items: center; gap: 7px; padding: 10px; color: var(--muted); font-size: 11px; cursor: pointer; }.query-reference pre { max-height: 300px; margin: 0; overflow: auto; padding: 12px; border-top: 1px solid var(--line); color: #afc7ce; font-size: 10px; }
 .query-reference { min-width: 0; max-width: 100%; }.query-reference > code { max-width: 100%; overflow-x: auto; white-space: nowrap; }
+.remediation-block { margin: 0 0 26px; }
 
 .loading-shell { display: grid; place-items: center; align-content: center; gap: 12px; color: var(--muted); font-size: 12px; }.loading-shell span { width: 42px; height: 2px; background: var(--line); position: relative; overflow: hidden; }.loading-shell span::after { content: ''; position: absolute; width: 18px; height: 100%; background: var(--cyan); animation: scan 1s infinite linear; } @keyframes scan { from { left: -18px; } to { left: 42px; } }
 

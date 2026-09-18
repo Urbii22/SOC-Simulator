@@ -4,7 +4,7 @@
 
 La aplicación usa un monolito modular TypeScript para reducir fricción local: Vite sirve React en desarrollo y Express sirve el build en producción. El dominio y el motor son módulos independientes, por lo que pueden extraerse si el proyecto crece.
 
-El generador mezcla 42 eventos benignos con cuatro o más eventos maliciosos por escenario. Una PRNG con semilla fija mantiene IDs, orden y timestamps reproducibles. Cada evento conserva campos normalizados (`host`, `user`, `sourceIp`, `eventCode`, `action`, `outcome`) y detalles específicos de la fuente.
+El generador mezcla una cantidad configurable de eventos benignos con la timeline relevante de cada escenario. Una PRNG con semilla fija mantiene IDs, orden y timestamps reproducibles. Los diez casos originales conservan su generación histórica; los nuevos seleccionan fuentes y volumen de ruido según dificultad. Cada evento conserva campos normalizados (`host`, `user`, `sourceIp`, `destinationIp`, `eventCode`, `action`, `outcome`) y detalles específicos de la fuente.
 
 ```mermaid
 sequenceDiagram
@@ -38,3 +38,7 @@ Estados, notas y progreso se guardan en `data/state.json`. Los datasets no se al
 ## Elasticsearch
 
 `POST /api/elastic/sync` crea `soc-training-events`, aplica mappings de fecha, keyword e IP y realiza un bulk idempotente usando el ID del evento. Kibana trabaja sobre ese índice.
+
+## Validación del catálogo
+
+`src/scenarios/validation.ts` verifica las 30 definiciones: determinismo, IDs, timestamps, timeline privada, IOC y respuestas demostrables, hosts y usuarios declarados, catálogo MITRE, campos KQL/SPL, estructura Sigma, tamaños y diversidad de fuentes. `npm run validate:scenarios` ejecuta esta puerta sin levantar la aplicación.

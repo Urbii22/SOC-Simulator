@@ -1,7 +1,7 @@
-import type { Difficulty, Ioc, InvestigationQuestion, MitreTechnique, SecurityEvent, Severity } from '../domain/types.js';
+import type { Difficulty, EventSource, Ioc, InvestigationQuestion, MitreTechnique, SecurityEvent, Severity } from '../domain/types.js';
 
 export interface AttackEvent extends Omit<SecurityEvent, 'id' | 'scenarioId' | 'timestamp'> { offsetMinutes: number }
-export interface AnswerKey { value: string | boolean; aliases?: string[]; explanation: string }
+export interface AnswerKey { value: string | boolean; aliases?: string[]; explanation: string; evidenceTerms?: string[] }
 
 export interface ScenarioDefinition {
   id: string;
@@ -11,11 +11,15 @@ export interface ScenarioDefinition {
   severity: Severity;
   description: string;
   briefing: string;
+  businessContext: string;
   primaryUser: string;
   primaryHost: string;
   users: string[];
   hosts: string[];
   alerts: string[];
+  noiseCount?: number;
+  noiseSources?: EventSource[];
+  expectedVerdict: 'true-positive' | 'false-positive' | 'mixed';
   attackEvents: AttackEvent[];
   questions: InvestigationQuestion[];
   answers: Record<string, AnswerKey>;
@@ -23,6 +27,7 @@ export interface ScenarioDefinition {
   mitre: MitreTechnique[];
   explanation: string;
   reasoning: string[];
-  queries: { kql: string[]; spl: string[]; sigma: string };
+  queries: { kql: string[]; spl: string[]; sigma?: string };
   responseActions: string[];
+  remediationActions: string[];
 }

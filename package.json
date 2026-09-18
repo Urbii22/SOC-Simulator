@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate": "tsx scripts/generate-datasets.ts",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "validate:scenarios": "tsx scripts/validate-scenarios.ts",
+    "check": "npm run lint && npm run typecheck && npm run validate:scenarios && npm run test && npm run build"
   },
   "dependencies": {
     "@elastic/elasticsearch": "^9.1.0",

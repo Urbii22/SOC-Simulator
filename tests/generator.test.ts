@@ -3,12 +3,20 @@ import { scenarioDefinitions } from '../src/scenarios/definitions.js';
 import { generateScenarioEvents, getAttackEvents } from '../src/scenarios/generator.js';
 
 describe('scenario generator', () => {
-  it('ships the ten requested scenarios', () => {
-    expect(scenarioDefinitions).toHaveLength(10);
+  it('ships the thirty requested scenarios in stable order', () => {
+    expect(scenarioDefinitions).toHaveLength(30);
     expect(scenarioDefinitions.map((item) => item.id)).toEqual(expect.arrayContaining([
       'ssh-brute-force', 'password-spraying', 'credential-stuffing', 'suspicious-powershell',
       'phishing-payload', 'dns-tunneling', 'malware-beaconing', 'webshell',
       'privilege-escalation', 'data-exfiltration',
+      'suspicious-rdp-login', 'account-lockout', 'web-directory-bruteforce',
+      'suspicious-scheduled-task', 'browser-download', 'phishing-powershell',
+      'web-account-privilege-abuse', 'suspicious-smb', 'dns-beaconing',
+      'credential-dumping', 'lateral-movement-remote-services', 'registry-run-keys',
+      'initial-access-execution-persistence', 'spray-compromise-recon',
+      'web-exploit-webshell-command', 'endpoint-c2-exfiltration',
+      'phishing-credential-cloud-abuse', 'ambiguous-admin-activity',
+      'possible-data-exfiltration', 'mixed-alert-incident',
     ]));
   });
 

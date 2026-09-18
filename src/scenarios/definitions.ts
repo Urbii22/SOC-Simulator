@@ -1,5 +1,9 @@
 import type { AttackEvent, ScenarioDefinition } from './model.js';
 import type { EventSource, MitreTechnique } from '../domain/types.js';
+import { groupAScenarios } from './expanded/group-a.js';
+import { groupBScenarios } from './expanded/group-b.js';
+import { groupCScenarios } from './expanded/group-c.js';
+import { groupDScenarios } from './expanded/group-d.js';
 
 interface CaseSpec {
   id: string; title: string; difficulty: ScenarioDefinition['difficulty']; category: string;
@@ -35,8 +39,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'El mismo origen provoca 18 fallos, logra autenticarse como deploy y lanza curl dos minutos después. La correlación confirma un verdadero positivo.',
     response: ['Aislar bastion-01 de la red', 'Bloquear 185.220.101.34', 'Rotar las credenciales de deploy', 'Revisar authorized_keys y procesos persistentes'],
-    kql: ['host.name:"bastion-01" and event.category:authentication', 'source.ip:"185.220.101.34"'],
-    spl: ['index=soc host=bastion-01 sourcetype=linux:auth', 'index=soc src_ip=185.220.101.34 | sort _time'], sigmaSelection: 'source.ip: 185.220.101.34'
+    kql: ['host:"bastion-01" and source:"auth"', 'sourceIp:"185.220.101.34"'],
+    spl: ['index=soc host=bastion-01 source=auth', 'index=soc sourceIp=185.220.101.34 | sort timestamp'], sigmaSelection: 'sourceIp: 185.220.101.34'
   },
   {
     id: 'password-spraying', title: 'Password spraying en Microsoft 365', difficulty: 'Foundation',
@@ -54,8 +58,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'La IP reparte intentos entre 14 cuentas para evadir bloqueos. La sesión de marta.sanz sin MFA y el acceso inmediato al buzón confirman compromiso.',
     response: ['Revocar sesiones de marta.sanz', 'Restablecer su contraseña', 'Exigir MFA resistente a phishing', 'Bloquear el origen y revisar reglas de buzón'],
-    kql: ['event.category:authentication and source.ip:"45.133.1.77"', 'user.name:"marta.sanz" and event.outcome:success'],
-    spl: ['index=soc src_ip=45.133.1.77 action=failure | stats dc(user) by src_ip', 'index=soc user=marta.sanz action=success'], sigmaSelection: 'source.ip: 45.133.1.77'
+    kql: ['source:"auth" and sourceIp:"45.133.1.77"', 'user:"marta.sanz" and outcome:"success"'],
+    spl: ['index=soc sourceIp=45.133.1.77 outcome=failure | stats dc(user) by sourceIp', 'index=soc user=marta.sanz outcome=success'], sigmaSelection: 'sourceIp: 45.133.1.77'
   },
   {
     id: 'credential-stuffing', title: 'Credential stuffing en portal VPN', difficulty: 'Intermediate',
@@ -73,8 +77,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'El user-agent automatizado, el dispositivo desconocido y la enumeración SMB posterior demuestran uso de credenciales filtradas.',
     response: ['Desconectar el túnel VPN', 'Revocar credenciales y sesiones', 'Forzar MFA', 'Revisar accesos a files-01'],
-    kql: ['host.name:"vpn-gw-02" and user.name:"a.ruiz"', 'source.ip:"91.214.124.18"'],
-    spl: ['index=soc host=vpn-gw-02 user=a.ruiz', 'index=soc src_ip=91.214.124.18'], sigmaSelection: 'source.ip: 91.214.124.18'
+    kql: ['host:"vpn-gw-02" and user:"a.ruiz"', 'sourceIp:"91.214.124.18"'],
+    spl: ['index=soc host=vpn-gw-02 user=a.ruiz', 'index=soc sourceIp=91.214.124.18'], sigmaSelection: 'sourceIp: 91.214.124.18'
   },
   {
     id: 'suspicious-powershell', title: 'PowerShell codificado en estación financiera', difficulty: 'Intermediate',
@@ -92,8 +96,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'Word inicia PowerShell codificado, que descarga contenido y crea una tarea. La cadena de procesos y persistencia confirma ejecución maliciosa.',
     response: ['Aislar fin-wks-07', 'Finalizar PowerShell y preservar memoria', 'Eliminar la tarea tras adquirir evidencias', 'Bloquear el dominio y buscarlo en el entorno'],
-    kql: ['host.name:"fin-wks-07" and process.name:"powershell.exe"', 'winlog.event_id:(4104 or 4698)'],
-    spl: ['index=soc host=fin-wks-07 process_name=powershell.exe', 'index=soc EventCode IN (4104,4698)'], sigmaSelection: 'CommandLine|contains: -EncodedCommand'
+    kql: ['host:"fin-wks-07" and details.process:"powershell.exe"', 'eventCode:(4104 or 4698)'],
+    spl: ['index=soc host=fin-wks-07 details.process=powershell.exe', 'index=soc eventCode IN (4104,4698)'], sigmaSelection: 'message|contains: -EncodedCommand'
   },
   {
     id: 'phishing-payload', title: 'Phishing con documento señuelo', difficulty: 'Intermediate',
@@ -111,8 +115,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'El documento con macro inicia mshta, descarga una HTA y deposita un ejecutable en AppData. Las tres fuentes forman una cadena consistente.',
     response: ['Aislar sales-wks-12', 'Purgar el mensaje de otros buzones', 'Bloquear remitente, dominio y hash', 'Restablecer credenciales del usuario'],
-    kql: ['process.parent.name:"WINWORD.EXE" and process.name:"mshta.exe"', 'url.domain:"invoices-share.example"'],
-    spl: ['index=soc parent_process=WINWORD.EXE process=mshta.exe', 'index=soc domain=invoices-share.example'], sigmaSelection: 'ParentImage|endswith: WINWORD.EXE'
+    kql: ['details.parent:"WINWORD.EXE" and details.process:"mshta.exe"', 'message:"*invoices-share.example*"'],
+    spl: ['index=soc details.parent=WINWORD.EXE details.process=mshta.exe', 'index=soc message="*invoices-share.example*"'], sigmaSelection: 'details.parent|endswith: WINWORD.EXE'
   },
   {
     id: 'dns-tunneling', title: 'Túnel DNS desde equipo de I+D', difficulty: 'Advanced',
@@ -130,8 +134,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'Etiquetas codificadas, alta entropía, consultas TXT y cadencia sostenida desde un solo host encajan con exfiltración sobre DNS.',
     response: ['Aislar rnd-wks-03', 'Bloquear el dominio en el resolvedor', 'Capturar DNS histórico', 'Buscar el proceso originador con EDR'],
-    kql: ['dns.question.registered_domain:"telemetry-sync.example"', 'host.name:"rnd-wks-03" and dns.question.type:TXT'],
-    spl: ['index=soc sourcetype=dns query="*.telemetry-sync.example"', 'index=soc host=rnd-wks-03 qtype=TXT'], sigmaSelection: 'query|endswith: .telemetry-sync.example'
+    kql: ['message:"*telemetry-sync.example*"', 'host:"rnd-wks-03" and details.qtype:"TXT"'],
+    spl: ['index=soc source=dns message="*telemetry-sync.example*"', 'index=soc host=rnd-wks-03 details.qtype=TXT'], sigmaSelection: 'message|endswith: .telemetry-sync.example'
   },
   {
     id: 'malware-beaconing', title: 'Beaconing TLS de baja frecuencia', difficulty: 'Advanced',
@@ -149,8 +153,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'El binario no firmado inicia conexiones casi idénticas cada 60 segundos al mismo destino. La regularidad y el JA3 estable confirman beaconing.',
     response: ['Aislar ops-wks-19', 'Bloquear 203.0.113.88', 'Adquirir memoria y diaghost.exe', 'Buscar el hash y JA3 en toda la red'],
-    kql: ['destination.ip:"203.0.113.88"', 'process.executable:"C:\\\\ProgramData\\\\diaghost.exe"'],
-    spl: ['index=soc dest_ip=203.0.113.88 | streamstats current=f last(_time) as prev', 'index=soc process_path="*diaghost.exe"'], sigmaSelection: 'DestinationIp: 203.0.113.88'
+    kql: ['details.destination:"203.0.113.88"', 'message:"*diaghost.exe*"'],
+    spl: ['index=soc details.destination=203.0.113.88 | streamstats current=f last(timestamp) as prev', 'index=soc message="*diaghost.exe*"'], sigmaSelection: 'details.destination: 203.0.113.88'
   },
   {
     id: 'webshell', title: 'Webshell en servidor de soporte', difficulty: 'Advanced',
@@ -168,8 +172,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'La subida oculta, su creación en el webroot y la ejecución de /bin/sh por nginx constituyen evidencia directa de webshell.',
     response: ['Retirar web-support-01 del balanceador', 'Preservar y poner en cuarentena .cache.php', 'Corregir la validación de subidas', 'Rotar secretos accesibles por www-data'],
-    kql: ['url.path:"/uploads/.cache.php"', 'process.parent.name:"nginx" and process.name:("sh" or "bash")'],
-    spl: ['index=soc uri_path="/uploads/.cache.php"', 'index=soc parent_process=nginx process IN (sh,bash)'], sigmaSelection: 'process.parent.name: nginx'
+    kql: ['message:"*/uploads/.cache.php*"', 'details.parent:"nginx" and details.process:("/bin/sh" or "/bin/bash")'],
+    spl: ['index=soc message="*/uploads/.cache.php*"', 'index=soc details.parent=nginx details.process IN ("/bin/sh","/bin/bash")'], sigmaSelection: 'details.parent: nginx'
   },
   {
     id: 'privilege-escalation', title: 'Escalada local mediante servicio vulnerable', difficulty: 'Intermediate',
@@ -187,8 +191,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'El usuario cambia ImagePath de un servicio arrancable y el servicio ejecuta su binario como SYSTEM, una escalada confirmada.',
     response: ['Aislar hr-wks-04', 'Detener y deshabilitar LegacyUpdater', 'Corregir ACL del servicio', 'Revisar acciones realizadas como SYSTEM'],
-    kql: ['host.name:"hr-wks-04" and winlog.event_id:(7040 or 7036)', 'user.name:"SYSTEM" and process.name:"cmd.exe"'],
-    spl: ['index=soc host=hr-wks-04 EventCode IN (7040,7036)', 'index=soc user=SYSTEM process=cmd.exe'], sigmaSelection: 'winlog.event_id: 7040'
+    kql: ['host:"hr-wks-04" and eventCode:(7040 or 7036)', 'user:"SYSTEM" and message:"*cmd.exe*"'],
+    spl: ['index=soc host=hr-wks-04 eventCode IN (7040,7036)', 'index=soc user=SYSTEM message="*cmd.exe*"'], sigmaSelection: 'eventCode: 7040'
   },
   {
     id: 'data-exfiltration', title: 'Exfiltración a almacenamiento cloud', difficulty: 'Advanced',
@@ -206,8 +210,8 @@ const specs: CaseSpec[] = [
     ],
     explanation: 'La lectura masiva, la compresión con 7-Zip y la carga de 286 MB al dominio no autorizado prueban preparación y exfiltración.',
     response: ['Bloquear la carga y el dominio', 'Aislar legal-wks-02', 'Preservar cases.7z y logs del proxy', 'Notificar a Legal y privacidad para evaluar impacto'],
-    kql: ['user.name:"ines.prado" and event.action:(file_access or upload)', 'url.domain:"dropfiles-storage.example"'],
-    spl: ['index=soc user=ines.prado (action=file_access OR action=upload)', 'index=soc domain=dropfiles-storage.example'], sigmaSelection: 'url.domain: dropfiles-storage.example'
+    kql: ['user:"ines.prado" and action:("file_access" or "upload")', 'message:"*dropfiles-storage.example*"'],
+    spl: ['index=soc user=ines.prado action IN (file_access,upload)', 'index=soc message="*dropfiles-storage.example*"'], sigmaSelection: 'message|contains: dropfiles-storage.example'
   }
 ];
 
@@ -223,10 +227,11 @@ function makeDefinition(spec: CaseSpec): ScenarioDefinition {
   return {
     id: spec.id, title: spec.title, difficulty: spec.difficulty, category: spec.category,
     severity: spec.severity, description: spec.description, briefing: spec.briefing,
+    businessContext: 'Entorno corporativo de entrenamiento con controles preventivos y telemetría centralizada.',
     primaryUser: spec.user, primaryHost: spec.host,
     users: [...new Set([spec.user, 'svc.backup', 'mlopez', 'administrator'])],
     hosts: [...new Set([spec.host, 'dc-01', 'proxy-01', 'dns-01'])], alerts: spec.alerts,
-    attackEvents: spec.events, questions,
+    expectedVerdict: 'true-positive', attackEvents: spec.events, questions,
     answers: {
       host: { value: spec.host, explanation: `Los eventos correlacionados convergen en ${spec.host}.` },
       user: { value: spec.user, explanation: `${spec.user} aparece en la cadena de actividad relevante.` },
@@ -241,9 +246,10 @@ function makeDefinition(spec: CaseSpec): ScenarioDefinition {
       kql: spec.kql, spl: spec.spl,
       sigma: `title: ${spec.title}\nstatus: experimental\nlogsource:\n  category: security\ndetection:\n  selection:\n    ${spec.sigmaSelection}\n  condition: selection\nfalsepositives:\n  - Validar con el propietario del activo\nlevel: ${spec.severity}`,
     },
-    responseActions: spec.response,
+    responseActions: spec.response.slice(0, 2),
+    remediationActions: spec.response.slice(2),
   };
 }
 
-export const scenarioDefinitions = specs.map(makeDefinition);
+export const scenarioDefinitions = [...specs.map(makeDefinition), ...groupAScenarios, ...groupBScenarios, ...groupCScenarios, ...groupDScenarios];
 export const scenarioById = new Map(scenarioDefinitions.map((scenario) => [scenario.id, scenario]));

@@ -1,7 +1,7 @@
 export type Severity = 'critical' | 'high' | 'medium' | 'low';
 export type IncidentStatus = 'New' | 'Investigating' | 'Escalated' | 'Closed - True Positive' | 'Closed - False Positive';
 export type Difficulty = 'Foundation' | 'Intermediate' | 'Advanced';
-export type EventSource = 'windows' | 'sysmon' | 'linux' | 'dns' | 'http' | 'auth' | 'network' | 'suricata';
+export type EventSource = 'windows' | 'sysmon' | 'linux' | 'dns' | 'http' | 'auth' | 'network' | 'suricata' | 'firewall' | 'endpoint' | 'email' | 'cloud';
 
 export interface SecurityEvent {
   id: string;
@@ -49,6 +49,7 @@ export interface ScenarioSummary {
 
 export interface ScenarioDetail extends ScenarioSummary {
   briefing: string;
+  businessContext: string;
   alerts: string[];
   users: string[];
   hosts: string[];
@@ -69,6 +70,7 @@ export interface GradeResult {
   timeline: SecurityEvent[];
   iocs: Ioc[];
   mitre: MitreTechnique[];
-  queries: { kql: string[]; spl: string[]; sigma: string };
+  queries: { kql: string[]; spl: string[]; sigma?: string };
   responseActions: string[];
+  remediationActions: string[];
 }

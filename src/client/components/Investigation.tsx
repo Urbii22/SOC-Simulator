@@ -40,9 +40,10 @@ function Resolution({ result }: { result: GradeResult }) {
       <div className="feedback-list">{result.feedback.map((item) => <div key={item.questionId} className={`feedback-row ${item.correct ? 'is-correct' : 'is-wrong'}`}>{item.correct ? <Check size={17} /> : <X size={17} />}<div><strong>{item.correct ? 'Respuesta correcta' : `Respuesta esperada: ${item.expected}`}</strong><p>{item.explanation}</p></div></div>)}</div>
       <div className="resolution-grid">
         <div><span className="eyebrow">IOC confirmados</span><ul className="plain-list">{result.iocs.map((ioc) => <li key={ioc.value}><code>{ioc.value}</code><span>{ioc.context}</span></li>)}</ul></div>
-        <div><span className="eyebrow">Respuesta</span><ol className="action-list">{result.responseActions.map((action) => <li key={action}>{action}</li>)}</ol></div>
+        <div><span className="eyebrow">Contención</span><ol className="action-list">{result.responseActions.map((action) => <li key={action}>{action}</li>)}</ol></div>
       </div>
-      <div className="query-reference"><span className="eyebrow">Consultas de referencia</span><h4>KQL</h4>{result.queries.kql.map((query) => <code key={query}>{query}</code>)}<h4>SPL</h4>{result.queries.spl.map((query) => <code key={query}>{query}</code>)}<details><summary><ShieldCheck size={15} /> Regla Sigma</summary><pre>{result.queries.sigma}</pre></details></div>
+      <div className="remediation-block"><span className="eyebrow">Remediación</span><ol className="action-list">{result.remediationActions.map((action) => <li key={action}>{action}</li>)}</ol></div>
+      <div className="query-reference"><span className="eyebrow">Consultas de referencia</span><h4>KQL</h4>{result.queries.kql.map((query) => <code key={query}>{query}</code>)}<h4>SPL</h4>{result.queries.spl.map((query) => <code key={query}>{query}</code>)}{result.queries.sigma && <details><summary><ShieldCheck size={15} /> Regla Sigma</summary><pre>{result.queries.sigma}</pre></details>}</div>
     </section>
   );
 }
