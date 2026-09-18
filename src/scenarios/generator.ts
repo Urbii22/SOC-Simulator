@@ -54,7 +54,32 @@ export function generateScenarioEvents(definition: ScenarioDefinition, seed = de
     .map((item, index) => ({ ...item, id: `${definition.id}-evt-${String(index + 1).padStart(3, '0')}` }));
 }
 
+function detailsEqual(left: SecurityEvent['details'], right: ScenarioDefinition['attackEvents'][number]['details']): boolean {
+  const leftEntries = Object.entries(left);
+  const rightEntries = Object.entries(right);
+  return leftEntries.length === rightEntries.length && leftEntries.every(([key, value]) => Object.is(value, right[key]));
+}
+
+function matchesAttackEvent(definition: ScenarioDefinition, event: SecurityEvent, attack: ScenarioDefinition['attackEvents'][number]): boolean {
+  const timestamp = new Date(Date.parse(definition.metadata.baseTimestamp) + attack.offsetMinutes * 60_000).toISOString();
+  return event.timestamp === timestamp
+    && event.source === attack.source
+    && event.host === attack.host
+    && event.user === attack.user
+    && event.sourceIp === attack.sourceIp
+    && event.destinationIp === attack.destinationIp
+    && event.eventCode === attack.eventCode
+    && event.action === attack.action
+    && event.outcome === attack.outcome
+    && event.message === attack.message
+    && detailsEqual(event.details, attack.details);
+}
+
 export function getAttackEvents(definition: ScenarioDefinition, events = generateScenarioEvents(definition)): SecurityEvent[] {
-  const messages = new Set(definition.attackEvents.map((item) => item.message));
-  return events.filter((item) => messages.has(item.message));
+  const remaining = [...events];
+  return definition.attackEvents.flatMap((attack) => {
+    const index = remaining.findIndex((event) => matchesAttackEvent(definition, event, attack));
+    if (index < 0) return [];
+    return remaining.splice(index, 1);
+  });
 }

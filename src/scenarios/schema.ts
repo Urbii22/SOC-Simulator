@@ -66,7 +66,7 @@ const mitreSchema = z.object({
 
 const metadataSchema = z.object({
   schemaVersion: z.literal(1),
-  deterministic: z.boolean(),
+  deterministic: z.literal(true),
   defaultSeed: z.number().int().nonnegative(),
   baseTimestamp: z.string().datetime({ offset: true }),
   correlation: z.enum(['single-source', 'multi-source', 'multi-stage', 'ambiguous']),

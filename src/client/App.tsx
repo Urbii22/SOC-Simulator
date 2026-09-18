@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CircleDot, Command, RadioTower, RefreshCw, Shield } from 'lucide-react';
 import type { GradeResult, IncidentStatus, ScenarioDetail, ScenarioSummary } from '../domain/types';
 import { api } from './api';
@@ -13,13 +13,23 @@ export function App() {
   const [severity, setSeverity] = useState('all');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
 
   const loadList = useCallback(async () => {
-    const items = await api.scenarios(); setScenarios(items);
+    const items = await api.scenarios(); setScenarios(items); setError('');
     setSelectedId((current) => current || items[0]?.id || '');
   }, []);
   useEffect(() => { loadList().catch(() => setError('No se pudo conectar con la API del laboratorio.')).finally(() => setLoading(false)); }, [loadList]);
-  useEffect(() => { if (selectedId) api.detail(selectedId).then(setDetail).catch(() => setError('No se pudo cargar el incidente.')); }, [selectedId]);
+  useEffect(() => {
+    if (!selectedId) return;
+    let active = true;
+    setDetail(null);
+    api.detail(selectedId)
+      .then((item) => { if (active) { setDetail(item); setError(''); } })
+      .catch(() => { if (active) setError('No se pudo cargar el incidente.'); });
+    return () => { active = false; };
+  }, [selectedId]);
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); document.getElementById('alert-search')?.focus(); }
@@ -27,7 +37,15 @@ export function App() {
     window.addEventListener('keydown', focusSearch);
     return () => window.removeEventListener('keydown', focusSearch);
   }, []);
-  const update = async (change: { status?: IncidentStatus; notes?: string }) => { if (!selectedId) return; await api.update(selectedId, change); await Promise.all([loadList(), api.detail(selectedId).then(setDetail)]); };
+  const update = async (change: { status?: IncidentStatus; notes?: string }) => {
+    if (!selectedId) return;
+    const id = selectedId;
+    try {
+      await api.update(id, change);
+      const [, fresh] = await Promise.all([loadList(), api.detail(id)]);
+      if (selectedIdRef.current === id) setDetail(fresh);
+    } catch { setError('No se pudo guardar el estado del incidente.'); }
+  };
   const submit = async (answers: Record<string, string | boolean>): Promise<GradeResult> => { const result = await api.submit(selectedId, answers); await loadList(); return result; };
   const statusText = useMemo(() => `${scenarios.filter((item) => item.progress === 100).length}/${scenarios.length} casos completados`, [scenarios]);
 

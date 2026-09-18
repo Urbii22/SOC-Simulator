@@ -14,9 +14,13 @@ function parseArgs(args: string[]): { options?: CliOptions; error?: string } {
     else if (argument === '--verbose') options.verbose = true;
     else if (argument === '--scenario') {
       const value = args[++index];
+      if (!value || value.startsWith('--')) return { error: '--scenario requires an id' };
+      options.scenarioId = value;
+    } else if (argument.startsWith('--scenario=')) {
+      const value = argument.slice('--scenario='.length);
       if (!value) return { error: '--scenario requires an id' };
       options.scenarioId = value;
-    } else if (argument.startsWith('--scenario=')) options.scenarioId = argument.slice('--scenario='.length);
+    }
     else return { error: `unknown option ${argument}` };
   }
   return { options };

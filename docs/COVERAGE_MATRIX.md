@@ -9,9 +9,9 @@
 | 3 | credential-stuffing — Credential stuffing en portal VPN | Intermediate | Initial Access | dns, http, auth, network, windows, linux | 46 | 5 | 4 | 1 | T1110.004 (Credential Access) | true-positive | 3 fuentes / 4 evidencias |
 | 4 | suspicious-powershell — PowerShell codificado en estación financiera | Intermediate | Execution | dns, http, auth, network, windows, linux, sysmon | 46 | 4 | 5 | 2 | T1059.001 (Execution) | true-positive | 2 fuentes / 4 evidencias |
 | 5 | phishing-payload — Phishing con documento señuelo | Intermediate | Initial Access | dns, http, auth, network, windows, linux, sysmon | 46 | 5 | 4 | 2 | T1566.001 (Initial Access) | true-positive | 2 fuentes / 4 evidencias |
-| 6 | dns-tunneling — Túnel DNS desde equipo de I+D | Advanced | Command and Control | dns, http, auth, network, windows, linux | 46 | 4 | 4 | 1 | T1071.004 (Command and Control) | true-positive | 2 fuentes / 4 evidencias |
-| 7 | malware-beaconing — Beaconing TLS de baja frecuencia | Advanced | Command and Control | dns, http, auth, network, windows, linux, sysmon, suricata | 46 | 4 | 4 | 2 | T1071.001 (Command and Control) | true-positive | 3 fuentes / 4 evidencias |
-| 8 | webshell — Webshell en servidor de soporte | Advanced | Persistence | dns, http, auth, network, windows, linux | 46 | 4 | 5 | 2 | T1505.003 (Persistence) | true-positive | 2 fuentes / 4 evidencias |
+| 6 | dns-tunneling — Túnel DNS desde equipo de I+D | Advanced | Command and Control | dns, http, auth, network, windows, linux, endpoint, firewall | 48 | 5 | 4 | 1 | T1071.004 (Command and Control) | true-positive | 4 fuentes / 6 evidencias |
+| 7 | malware-beaconing — Beaconing TLS de baja frecuencia | Advanced | Command and Control | dns, http, auth, network, windows, linux, sysmon, endpoint, suricata | 47 | 4 | 4 | 2 | T1071.001 (Command and Control) | true-positive | 4 fuentes / 5 evidencias |
+| 8 | webshell — Webshell en servidor de soporte | Advanced | Persistence | dns, http, auth, network, windows, linux, firewall, endpoint | 48 | 5 | 5 | 2 | T1505.003 (Persistence) | true-positive | 4 fuentes / 6 evidencias |
 | 9 | privilege-escalation — Escalada local mediante servicio vulnerable | Intermediate | Privilege Escalation | dns, http, auth, network, windows, linux, sysmon | 46 | 4 | 5 | 1 | T1543.003 (Privilege Escalation) | true-positive | 2 fuentes / 4 evidencias |
 | 10 | data-exfiltration — Exfiltración a almacenamiento cloud | Advanced | Exfiltration | dns, http, auth, network, windows, linux, sysmon | 46 | 4 | 4 | 2 | T1567.002 (Exfiltration) | true-positive | 4 fuentes / 4 evidencias |
 | 11 | suspicious-rdp-login — Inicio RDP fuera de patrón | Foundation | Lateral Movement | windows, auth, firewall, sysmon | 62 | 4 | 3 | 1 | T1021.001 (Lateral Movement), T1078 (Defense Evasion) | true-positive | 4 fuentes / 6 evidencias |
@@ -38,5 +38,5 @@
 ## Distribución
 
 - Técnicas: T1078: 3, T1110.001: 2, T1110.003: 2, T1059.001: 2, T1071.004: 2, T1071.001: 2, T1505.003: 2, T1567.002: 2, T1021.001: 2, T1204.002: 2, T1566.002: 2, T1021.002: 2, T1078.002: 2, T1190: 2, T1059.004: 2, T1560.001: 2, T1041: 2, T1110.004: 1, T1566.001: 1, T1543.003: 1, T1595.003: 1, T1053.005: 1, T1105: 1, T1098.003: 1, T1135: 1, T1003.001: 1, T1021.006: 1, T1547.001: 1, T1053.003: 1, T1087.002: 1, T1056.003: 1, T1078.004: 1.
-- Fuentes: windows: 24, http: 20, dns: 19, network: 19, auth: 18, sysmon: 18, firewall: 13, linux: 12, endpoint: 11, suricata: 4, cloud: 4, email: 2.
-- Validación: 0 errores, 3 warnings, 71 observaciones; 2946 eventos.
+- Fuentes: windows: 24, http: 20, dns: 19, network: 19, auth: 18, sysmon: 18, firewall: 15, endpoint: 14, linux: 12, suricata: 4, cloud: 4, email: 2.
+- Validación: 0 errores, 0 warnings, 73 observaciones; 2951 eventos.

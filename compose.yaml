@@ -3,24 +3,29 @@ services:
   lab:
     build: .
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     environment:
       PORT: 3001
       STATE_FILE: /app/data/state.json
       ELASTICSEARCH_URL: http://elasticsearch:9200
     volumes:
       - lab-state:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0@sha256:2f602552550869fb29b6fd5848c5118d3ef3a2e1d5d45802e3ab9088cb2de8e2
     profiles: ["siem"]
     environment:
       discovery.type: single-node
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     volumes:
       - elastic-data:/usr/share/elasticsearch/data
     healthcheck:
@@ -30,17 +35,22 @@ services:
       retries: 20
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.17.0
+    image: docker.elastic.co/kibana/kibana:8.17.0@sha256:c773dc5a40b1739d7db6e559844ed45db08f15a25e0b66e00c176e3a1f6ace7e
     profiles: ["siem"]
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     ports:
-      - "5601:5601"
+      - "127.0.0.1:5601:5601"
     depends_on:
       elasticsearch:
         condition: service_healthy
     volumes:
       - ./infra/kibana:/opt/soc-kibana:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5601/api/status | grep -q '\"level\":\"available\"' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
 
 volumes:
   lab-state:

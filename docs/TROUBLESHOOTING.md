@@ -19,3 +19,5 @@ Algunas instalaciones endurecidas de npm requieren aprobar los scripts de instal
 ## Reinicio de estado
 
 Elimina `data/state.json` con la aplicación detenida. Los datasets se regeneran con `npm run generate`.
+
+Si `state.json` está truncado, supera 1 MiB o contiene estados incompatibles, la API se negará a arrancar con `Cannot load lab state` en vez de borrar silenciosamente el progreso. Conserva el fichero para diagnóstico y restaura una copia válida; elimínalo sólo si deseas reiniciar deliberadamente el laboratorio.

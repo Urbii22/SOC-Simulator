@@ -26,12 +26,12 @@ Las reglas no acceden a la UI ni a estado persistente. Reciben un `ValidationCon
 |---|---|
 | `schema` | Estructura estricta de escenario/evento, tipos, enums, fechas ISO, IDs, preguntas, respuestas y metadata. |
 | `determinism` | Tres generaciones iguales con la misma seed y variación de ruido con otra seed. |
-| `timeline` | Orden, rango temporal, reconstrucción exacta y relaciones causales conocidas (tareas, servicios, autenticación, movimiento y exfiltración). |
-| `semantics` | Fuentes, hosts, usuarios, preguntas, respuestas, puntos, referencias y campos de evidencia; además prueba valores directos de host/usuario/IP. |
+| `timeline` | Orden estricto, offsets no ambiguos, rango temporal, reconstrucción exacta y relaciones causales conocidas (tareas, servicios, autenticación, movimiento y exfiltración). |
+| `semantics` | Fuentes, hosts, usuarios, duplicados, veredicto, correlación, preguntas, respuestas, puntos y presencia de campos en la evidencia realmente referenciada. |
 | `ioc` | Duplicados, formato por tipo y presencia tanto en evidencia visible como en la timeline relevante. |
 | `mitre` | Formato, catálogo local, nombre/táctica exactos y soporte por pistas observables. |
-| `queries` | Campos disponibles, duplicados, fuentes declaradas y al menos un literal alcanzable en KQL/SPL. |
-| `sigma` | YAML real, claves mínimas, selectores, condición, campos y ejecución simplificada de cada selector sobre eventos generados. |
+| `queries` | Campos disponibles, duplicados, fuentes declaradas, literales alcanzables y ejecución local de conjunciones simples KQL/SPL. |
+| `sigma` | YAML real, claves mínimas, selectores, modificadores soportados, campos y evaluación booleana local de la condición sobre eventos generados. |
 | `spoilers` | Etiquetas privadas, términos de solución y respuestas literales filtradas en contexto público. Los tests de API inspeccionan recursivamente lista, detalle, eventos y NDJSON. |
 | `quality` | Ratio de ruido, diversidad multifuente, concentración de respuestas en un evento e IOC sin lookalikes benignos. |
 | `coverage` | IDs duplicados, fuentes infrautilizadas, técnicas sobrerrepresentadas y escenarios excesivamente similares. |
@@ -77,6 +77,6 @@ npm run generate:coverage
 
 No edites `docs/COVERAGE_MATRIX.md` manualmente.
 
-## Advertencias conocidas del catálogo
+## Estado estricto del catálogo
 
-El catálogo actual conserva tres warnings de diversidad: `dns-tunneling` y `webshell` tienen dos fuentes en su timeline relevante, y `malware-beaconing` tiene tres, por debajo del umbral heurístico de cuatro para nivel Advanced. Sus datasets sí incluyen ruido de seis a ocho fuentes y las respuestas siguen siendo demostrables; no son errores de coherencia. Se mantienen visibles para orientar una futura ampliación de telemetría sin alterar artificialmente los diez casos heredados.
+El catálogo actual no contiene warnings y pasa `--strict`. Los escenarios Advanced heredados `dns-tunneling`, `malware-beaconing` y `webshell` incluyen ahora cuatro fuentes relevantes con señales de endpoint, firewall o red que complementan —sin duplicar— la evidencia original.

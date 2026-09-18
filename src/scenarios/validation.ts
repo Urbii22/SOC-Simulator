@@ -25,10 +25,20 @@ function getField(event: ValidationContext['events'][number], field: string): un
   return event[field as keyof typeof event];
 }
 
+function attackEventHasField(event: ScenarioDefinition['attackEvents'][number], field: string): boolean {
+  if (field === 'details.*') return Object.keys(event.details).length > 0;
+  if (field.startsWith('details.')) return event.details[field.slice('details.'.length)] !== undefined;
+  return event[field as keyof typeof event] !== undefined;
+}
+
 function availableFields(events: ValidationContext['events']): Set<string> {
   const fields = new Set(baseEventFields);
   for (const event of events) for (const key of Object.keys(event.details)) fields.add(`details.${key}`);
   return fields;
+}
+
+function duplicateValues(values: readonly string[]): string[] {
+  return [...new Set(values.filter((value, index) => values.indexOf(value) !== index))];
 }
 
 function metricsFor(context: ValidationContext): ScenarioMetrics {
@@ -88,7 +98,7 @@ const timelineRule: ValidationRule = {
     const base = Date.parse(scenario.metadata.baseTimestamp);
     if (events.some((event) => !Number.isFinite(Date.parse(event.timestamp)))) findings.push(issue(scenario.id, 'timeline', 'error', 'generated dataset contains an invalid timestamp', 'events'));
     if (events.some((event, index) => index > 0 && event.timestamp < events[index - 1].timestamp)) findings.push(issue(scenario.id, 'timeline', 'error', 'generated events are not chronologically sorted', 'events'));
-    if (scenario.attackEvents.some((event, index) => index > 0 && event.offsetMinutes < scenario.attackEvents[index - 1].offsetMinutes)) findings.push(issue(scenario.id, 'timeline', 'error', 'declared solution timeline is out of causal order', 'attackEvents'));
+    if (scenario.attackEvents.some((event, index) => index > 0 && event.offsetMinutes <= scenario.attackEvents[index - 1].offsetMinutes)) findings.push(issue(scenario.id, 'timeline', 'error', 'declared solution timeline is out of causal order or contains equal offsets', 'attackEvents'));
     const maximumOffset = Math.max((scenario.noiseCount ?? 42) * 1.5, ...scenario.attackEvents.map((event) => event.offsetMinutes)) + 5;
     if (events.some((event) => Date.parse(event.timestamp) < base || Date.parse(event.timestamp) > base + maximumOffset * 60_000)) findings.push(issue(scenario.id, 'timeline', 'error', 'event falls outside the scenario time range', 'events'));
     if (timeline.length !== scenario.attackEvents.length) findings.push(issue(scenario.id, 'timeline', 'error', 'solution timeline cannot be reconstructed exactly; check duplicate messages', 'attackEvents'));
@@ -151,6 +161,13 @@ const semanticsRule: ValidationRule = {
     for (const user of scenario.users) if (!events.some((event) => event.user === user)) findings.push(issue(scenario.id, 'semantics', 'error', `declared user ${user} is absent from the dataset`, 'users'));
     if (!scenario.hosts.includes(scenario.primaryHost)) findings.push(issue(scenario.id, 'semantics', 'error', 'primaryHost is not present in hosts', 'primaryHost'));
     if (!scenario.users.includes(scenario.primaryUser)) findings.push(issue(scenario.id, 'semantics', 'error', 'primaryUser is not present in users', 'primaryUser'));
+    for (const value of duplicateValues(scenario.hosts)) findings.push(issue(scenario.id, 'semantics', 'error', `duplicate host ${value}`, 'hosts'));
+    for (const value of duplicateValues(scenario.users)) findings.push(issue(scenario.id, 'semantics', 'error', `duplicate user ${value}`, 'users'));
+    for (const value of duplicateValues(scenario.dataSources)) findings.push(issue(scenario.id, 'semantics', 'error', `duplicate data source ${value}`, 'dataSources'));
+    const relevantSourceCount = new Set(scenario.attackEvents.map((event) => event.source)).size;
+    if (scenario.metadata.correlation === 'single-source' && relevantSourceCount !== 1) findings.push(issue(scenario.id, 'semantics', 'error', `single-source correlation declares ${relevantSourceCount} relevant sources`, 'metadata.correlation'));
+    if (['multi-source', 'multi-stage'].includes(scenario.metadata.correlation) && relevantSourceCount < 2) findings.push(issue(scenario.id, 'semantics', 'error', `${scenario.metadata.correlation} correlation has only ${relevantSourceCount} relevant source`, 'metadata.correlation'));
+    if (scenario.metadata.correlation === 'ambiguous' && scenario.expectedVerdict === 'true-positive') findings.push(issue(scenario.id, 'semantics', 'error', 'ambiguous correlation contradicts a true-positive expectedVerdict', 'metadata.correlation'));
     const questionIds = scenario.questions.map((question) => question.id);
     for (const id of new Set(questionIds.filter((id, index) => questionIds.indexOf(id) !== index))) findings.push(issue(scenario.id, 'semantics', 'error', `duplicate question id ${id}`, 'questions'));
     for (const question of scenario.questions) {
@@ -158,11 +175,17 @@ const semanticsRule: ValidationRule = {
       if (!answer) { findings.push(issue(scenario.id, 'semantics', 'error', `question ${question.id} has no answer`, `answers.${question.id}`)); continue; }
       if (question.type === 'boolean' && typeof answer.value !== 'boolean') findings.push(issue(scenario.id, 'semantics', 'error', `answer ${question.id} must be boolean`, `answers.${question.id}.value`));
       if (question.type === 'single' && (typeof answer.value !== 'string' || !question.options?.includes(answer.value))) findings.push(issue(scenario.id, 'semantics', 'error', `answer ${question.id} is not one of the question options`, `answers.${question.id}.value`));
+      if (question.options && new Set(question.options).size !== question.options.length) findings.push(issue(scenario.id, 'semantics', 'error', `question ${question.id} contains a duplicate option`, `questions.${question.id}.options`));
       const validRefs = new Set(scenario.attackEvents.map((_, index) => timelineRef(scenario.id, index)));
       for (const ref of answer.evidence.eventRefs) if (!validRefs.has(ref)) findings.push(issue(scenario.id, 'semantics', 'error', `answer ${question.id} references unknown evidence ${ref}`, `answers.${question.id}.evidence.eventRefs`));
       for (const field of answer.evidence.fields) if (field !== 'details.*' && !eventFields.has(field)) findings.push(issue(scenario.id, 'semantics', 'error', `answer ${question.id} references unavailable field ${field}`, `answers.${question.id}.evidence.fields`));
       for (const value of answer.evidence.iocValues ?? []) if (!scenario.iocs.some((ioc) => ioc.value === value)) findings.push(issue(scenario.id, 'semantics', 'error', `answer ${question.id} references unknown IOC ${value}`, `answers.${question.id}.evidence.iocValues`));
       const referenced = scenario.attackEvents.filter((_, index) => answer.evidence.eventRefs.includes(timelineRef(scenario.id, index)));
+      for (const field of answer.evidence.fields) {
+        if (field !== 'details.*' && !eventFields.has(field)) continue;
+        const present = referenced.some((event) => attackEventHasField(event, field));
+        if (!present) findings.push(issue(scenario.id, 'semantics', 'error', `answer ${question.id} field ${field} is absent from referenced evidence`, `answers.${question.id}.evidence.fields`));
+      }
       const proof = referenced.map(attackEventText).join(' ');
       for (const term of answer.evidenceTerms ?? []) if (!proof.includes(term.toLowerCase())) findings.push(issue(scenario.id, 'semantics', 'error', `answer ${question.id} evidence does not contain required term ${term}`, `answers.${question.id}.evidence`));
       if (typeof answer.value === 'string') {
@@ -176,6 +199,10 @@ const semanticsRule: ValidationRule = {
         }
       }
     }
+    const verdict = scenario.answers.verdict?.value;
+    if (scenario.expectedVerdict === 'true-positive' && verdict !== true) findings.push(issue(scenario.id, 'semantics', 'error', 'verdict answer contradicts expectedVerdict true-positive', 'answers.verdict.value'));
+    if (scenario.expectedVerdict === 'false-positive' && verdict !== false) findings.push(issue(scenario.id, 'semantics', 'error', 'verdict answer contradicts expectedVerdict false-positive', 'answers.verdict.value'));
+    if (scenario.expectedVerdict === 'mixed' && (typeof verdict !== 'string' || verdict.toLowerCase() !== 'mixed')) findings.push(issue(scenario.id, 'semantics', 'error', 'verdict answer contradicts expectedVerdict mixed', 'answers.verdict.value'));
     for (const id of Object.keys(scenario.answers)) if (!questionIds.includes(id)) findings.push(issue(scenario.id, 'semantics', 'error', `answer ${id} has no corresponding question`, `answers.${id}`));
     if (scenario.questions.reduce((sum, question) => sum + question.points, 0) !== 100) findings.push(issue(scenario.id, 'semantics', 'error', 'question points do not total 100', 'questions'));
     return findings;
@@ -252,9 +279,33 @@ function queryLiterals(query: string): string[] {
   }).filter((value) => value.length >= 3 && !['soc', 'true', 'false'].includes(value)))];
 }
 
+interface QueryConstraint { field: string; value: string }
+
+function queryConstraints(query: string): QueryConstraint[] {
+  return [...query.matchAll(/([A-Za-z][\w.]*)\s*[:=]\s*(?:"([^"]+)"|([A-Za-z0-9_./$\\*-]+))/g)]
+    .map((match) => ({ field: match[1], value: match[2] ?? match[3] }))
+    .filter(({ field }) => !['index', 'current', 'maxspan'].includes(field.toLowerCase()));
+}
+
+function constraintMatches(event: ValidationContext['events'][number], constraint: QueryConstraint): boolean {
+  const actual = String(getField(event, constraint.field) ?? '').toLowerCase();
+  const expected = constraint.value.toLowerCase();
+  if (!expected.includes('*')) return actual === expected;
+  const pattern = expected.split('*').map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+  return new RegExp(`^${pattern}$`).test(actual);
+}
+
+function simpleConjunctionMatches(query: string, language: 'kql' | 'spl', events: ValidationContext['events']): boolean | undefined {
+  if (/\bor\b/i.test(query)) return undefined;
+  const constraints = queryConstraints(query);
+  const isConjunction = language === 'kql' ? /\band\b/i.test(query) && constraints.length >= 2 : constraints.length >= 2;
+  if (!isConjunction) return undefined;
+  return events.some((event) => constraints.every((constraint) => constraintMatches(event, constraint)));
+}
+
 const queryRule: ValidationRule = {
   id: 'queries', description: 'KQL/SPL fields, duplication, sources and evidence reachability',
-  validate({ scenario, eventFields, evidenceText }) {
+  validate({ scenario, events, eventFields, evidenceText }) {
     const findings: ValidationIssue[] = [];
     for (const [language, queries] of [['kql', scenario.queries.kql], ['spl', scenario.queries.spl]] as const) {
       const seen = new Set<string>();
@@ -270,6 +321,7 @@ const queryRule: ValidationRule = {
         for (const source of sourceValues) if (!scenario.dataSources.includes(source as ScenarioDefinition['dataSources'][number])) findings.push(issue(scenario.id, 'queries', 'error', `${language.toUpperCase()} query requires undeclared source ${source}`, path));
         const literals = queryLiterals(query);
         if (literals.length && !literals.some((literal) => evidenceText.includes(literal))) findings.push(issue(scenario.id, 'queries', 'error', `${language.toUpperCase()} query has no literal that can match this dataset`, path, { literals }));
+        if (simpleConjunctionMatches(query, language, events) === false) findings.push(issue(scenario.id, 'queries', 'error', `${language.toUpperCase()} query conjunction matches no generated event`, path));
       }
     }
     return findings;
@@ -293,6 +345,53 @@ function sigmaMatches(event: ValidationContext['events'][number], selection: Rec
   });
 }
 
+function sigmaConditionMatches(condition: string, event: ValidationContext['events'][number], selections: Map<string, Record<string, unknown>>): boolean | undefined {
+  const tokens = condition.match(/[()]|[A-Za-z_][\w-]*/g) ?? [];
+  if (!tokens.length || condition.replace(/\s+/g, '') !== tokens.join('')) return undefined;
+  let cursor = 0;
+  const primary = (): boolean | undefined => {
+    const token = tokens[cursor++];
+    if (token === '(') {
+      const value = orExpression();
+      if (tokens[cursor++] !== ')') return undefined;
+      return value;
+    }
+    if (!token || ['and', 'or', 'not'].includes(token.toLowerCase())) return undefined;
+    const selection = selections.get(token);
+    return selection ? sigmaMatches(event, selection) : false;
+  };
+  const notExpression = (): boolean | undefined => {
+    if (tokens[cursor]?.toLowerCase() === 'not') {
+      cursor++;
+      const value = notExpression();
+      return value === undefined ? undefined : !value;
+    }
+    return primary();
+  };
+  const andExpression = (): boolean | undefined => {
+    let value = notExpression();
+    while (tokens[cursor]?.toLowerCase() === 'and') {
+      cursor++;
+      const right = notExpression();
+      if (value === undefined || right === undefined) return undefined;
+      value = value && right;
+    }
+    return value;
+  };
+  const orExpression = (): boolean | undefined => {
+    let value = andExpression();
+    while (tokens[cursor]?.toLowerCase() === 'or') {
+      cursor++;
+      const right = andExpression();
+      if (value === undefined || right === undefined) return undefined;
+      value = value || right;
+    }
+    return value;
+  };
+  const result = orExpression();
+  return cursor === tokens.length ? result : undefined;
+}
+
 const sigmaRule: ValidationRule = {
   id: 'sigma', description: 'YAML, Sigma structure, selectors, fields and event match',
   validate({ scenario, events, eventFields }) {
@@ -312,6 +411,7 @@ const sigmaRule: ValidationRule = {
     const selectors = Object.entries(detection).filter(([key, value]) => key !== 'condition' && key !== 'timeframe' && value && typeof value === 'object');
     if (!selectors.length) findings.push(issue(scenario.id, 'sigma', 'error', 'Sigma detection has no selector', 'queries.sigma'));
     const selectorNames = new Set(selectors.map(([name]) => name));
+    const selectionMap = new Map(selectors.flatMap(([name, value]) => Array.isArray(value) ? [] : [[name, value as Record<string, unknown>]]));
     if (typeof condition === 'string') {
       const names = condition.match(/[A-Za-z_][\w-]*/g)?.filter((name) => !['and', 'or', 'not', 'of', 'all', 'them'].includes(name.toLowerCase())) ?? [];
       for (const name of names) if (!selectorNames.has(name)) findings.push(issue(scenario.id, 'sigma', 'error', `Sigma condition references unknown selector ${name}`, 'queries.sigma'));
@@ -320,10 +420,16 @@ const sigmaRule: ValidationRule = {
       if (Array.isArray(value)) { findings.push(issue(scenario.id, 'sigma', 'error', `Sigma selector ${name} must be a mapping`, 'queries.sigma')); continue; }
       const selection = value as Record<string, unknown>;
       for (const rawField of Object.keys(selection)) {
-        const field = rawField.split('|')[0];
+        const [field, modifier, ...extraModifiers] = rawField.split('|');
         if (!eventFields.has(field)) findings.push(issue(scenario.id, 'sigma', 'error', `Sigma selector ${name} uses unavailable field ${field}`, 'queries.sigma'));
+        if (extraModifiers.length || (modifier && !['contains', 'endswith', 'startswith', 'gte'].includes(modifier))) findings.push(issue(scenario.id, 'sigma', 'error', `Sigma selector ${name} uses unsupported field modifier in ${rawField}`, 'queries.sigma'));
       }
       if (!events.some((event) => sigmaMatches(event, selection))) findings.push(issue(scenario.id, 'sigma', 'error', `Sigma selector ${name} matches no generated event`, 'queries.sigma'));
+    }
+    if (typeof condition === 'string' && condition.trim()) {
+      const evaluations = events.map((event) => sigmaConditionMatches(condition, event, selectionMap));
+      if (evaluations.every((value) => value === undefined)) findings.push(issue(scenario.id, 'sigma', 'error', 'Sigma condition uses unsupported local syntax', 'queries.sigma'));
+      else if (!evaluations.some(Boolean)) findings.push(issue(scenario.id, 'sigma', 'error', 'Sigma condition matches no generated event', 'queries.sigma'));
     }
     return findings;
   },

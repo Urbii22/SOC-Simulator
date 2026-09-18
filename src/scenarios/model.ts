@@ -9,7 +9,7 @@ export interface AnswerEvidence {
 export interface AnswerKey { value: string | boolean; aliases?: string[]; explanation: string; evidenceTerms?: string[]; evidence: AnswerEvidence }
 export interface ScenarioMetadata {
   schemaVersion: 1;
-  deterministic: boolean;
+  deterministic: true;
   defaultSeed: number;
   baseTimestamp: string;
   correlation: 'single-source' | 'multi-source' | 'multi-stage' | 'ambiguous';

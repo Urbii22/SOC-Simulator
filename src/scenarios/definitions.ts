@@ -129,8 +129,10 @@ const specs: CaseSpec[] = [
     iocs: [{ type: 'domain', value: 'telemetry-sync.example', context: 'Dominio de túnel reservado para laboratorio' }],
     events: [
       event(4, 'dns', 'rnd-wks-03', 'n.ortega', '10.40.30.43', 'DNS-Q', 'dns_query', 'success', 'Query A MFRGGZDFMZTWQ2LK.telemetry-sync.example', { entropy: 4.71, qtype: 'A' }),
+      event(5, 'endpoint', 'rnd-wks-03', 'n.ortega', '10.40.30.43', 'PROC-DNS', 'process_network', 'unknown', 'Unsigned dns-helper process generated high-entropy DNS labels', { process: 'dns-helper.exe', signed: false }),
       event(7, 'dns', 'rnd-wks-03', 'n.ortega', '10.40.30.43', 'DNS-Q', 'dns_query', 'success', 'Query TXT ON2XEZJOOR4HI.telemetry-sync.example', { entropy: 4.63, qtype: 'TXT' }),
       event(13, 'network', 'rnd-wks-03', 'n.ortega', '10.40.30.43', 'FLOW', 'dns_transfer', 'success', 'Outbound DNS volume exceeded host baseline', { queries: 164, bytes: 48120 }),
+      event(14, 'firewall', 'fw-egress-01', 'n.ortega', '10.40.30.43', 'ALLOW-DNS', 'connection_allowed', 'success', 'Egress firewall allowed repeated DNS sessions from rnd-wks-03', { destination_port: 53, protocol: 'udp' }),
       event(30, 'dns', 'rnd-wks-03', 'n.ortega', '10.40.30.43', 'DNS-Q', 'dns_query', 'success', 'Query TXT NZXXE3DE.telemetry-sync.example', { entropy: 4.58 }),
     ],
     explanation: 'Etiquetas codificadas, alta entropía, consultas TXT y cadencia sostenida desde un solo host encajan con exfiltración sobre DNS.',
@@ -148,6 +150,7 @@ const specs: CaseSpec[] = [
     iocs: [{ type: 'ip', value: '203.0.113.88', context: 'Servidor C2 sintético' }, { type: 'path', value: 'C:\\ProgramData\\diaghost.exe', context: 'Implante de laboratorio' }],
     events: [
       event(6, 'sysmon', 'ops-wks-19', 'svc.inventory', '10.40.18.89', '1', 'process_start', 'success', 'C:\\ProgramData\\diaghost.exe started', { signed: false }),
+      event(6.5, 'endpoint', 'ops-wks-19', 'svc.inventory', '10.40.18.89', 'IMAGE-LOAD', 'image_load', 'unknown', 'Endpoint sensor observed unsigned diaghost.exe image', { process: 'diaghost.exe', signed: false }),
       event(7, 'network', 'ops-wks-19', 'svc.inventory', '10.40.18.89', 'TLS', 'tls_connect', 'success', 'TLS connection to 203.0.113.88:443', { bytes_out: 712, ja3: '72a589da586844d7' }),
       event(8, 'network', 'ops-wks-19', 'svc.inventory', '10.40.18.89', 'TLS', 'tls_connect', 'success', 'TLS connection to 203.0.113.88:443', { interval_seconds: 60, bytes_out: 704 }),
       event(9, 'suricata', 'ops-wks-19', 'svc.inventory', '10.40.18.89', 'SURICATA-2100498', 'c2_beacon', 'unknown', 'ET MALWARE Possible Meterpreter-like Beacon', { destination: '203.0.113.88' }),
@@ -168,7 +171,9 @@ const specs: CaseSpec[] = [
     events: [
       event(5, 'http', 'web-support-01', 'anonymous', '203.0.113.146', '200', 'file_upload', 'success', 'POST /api/ticket/attachment filename=.cache.php', { bytes: 2381 }),
       event(6, 'linux', 'web-support-01', 'www-data', '203.0.113.146', 'FIM', 'file_create', 'success', 'Created /var/www/html/uploads/.cache.php'),
+      event(11, 'firewall', 'fw-dmz-01', 'www-data', '203.0.113.146', 'ALLOW-WEB', 'connection_allowed', 'success', 'DMZ firewall allowed follow-up request to web-support-01', { destination_port: 443, policy: 'support-https' }),
       event(12, 'http', 'web-support-01', 'www-data', '203.0.113.146', '200', 'web_request', 'success', 'GET /uploads/.cache.php?cmd=id'),
+      event(12.1, 'endpoint', 'web-support-01', 'www-data', '203.0.113.146', 'PROC-CHILD', 'process_observed', 'unknown', 'Endpoint sensor observed nginx preparing a shell child process', { parent: 'nginx', process: '/bin/sh' }),
       event(12.2, 'linux', 'web-support-01', 'www-data', '203.0.113.146', 'execve', 'process_start', 'success', 'nginx worker spawned /bin/sh -c id', { parent: 'nginx', process: '/bin/sh' }),
     ],
     explanation: 'La subida oculta, su creación en el webroot y la ejecución de /bin/sh por nginx constituyen evidencia directa de webshell.',

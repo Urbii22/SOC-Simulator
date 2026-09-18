@@ -7,7 +7,7 @@ Laboratorio local, seguro y reproducible para practicar triage, investigación y
 ## Qué incluye
 
 - 30 escenarios progresivos: fundamentos, correlación multifuente, cadenas multi-stage y triage ambiguo.
-- 2.946 eventos reproducibles con ruido benigno y 12 fuentes: Windows, Sysmon, Linux, DNS, HTTP, autenticación, red, Suricata, firewall, endpoint, correo y cloud.
+- 2.951 eventos reproducibles con ruido benigno y 12 fuentes: Windows, Sysmon, Linux, DNS, HTTP, autenticación, red, Suricata, firewall, endpoint, correo y cloud.
 - Flujo de analista: cola, severidad, estados, evidencias, notas, preguntas y resolución explicada.
 - Referencias KQL, SPL y Sigma por escenario.
 - API validada, persistencia local y exportación NDJSON.
@@ -48,7 +48,7 @@ Modo SIEM completo (recomendados 4 GB de RAM libres):
 docker compose --profile siem up --build
 ```
 
-Cuando Elasticsearch esté disponible, indexa los 2.946 eventos:
+Cuando Elasticsearch esté disponible, indexa los 2.951 eventos:
 
 ```bash
 curl -X POST http://localhost:3001/api/elastic/sync
@@ -132,7 +132,7 @@ Los cuerpos de escritura se validan con Zod y tienen límites de tamaño. La API
 
 ## Seguridad y alcance
 
-Las IP públicas usadas pertenecen a rangos de documentación o se tratan como IOC sintéticos. Los dominios terminan en `.example`. No uses este laboratorio como sistema de producción ni expongas Elasticsearch sin autenticación; `xpack.security.enabled=false` existe únicamente para la red Docker local de entrenamiento.
+Las IP públicas usadas pertenecen a rangos de documentación o se tratan como IOC sintéticos. Los dominios terminan en `.example`. Los puertos publicados por Compose se enlazan sólo a `127.0.0.1`. No uses este laboratorio como sistema de producción ni expongas Elasticsearch sin autenticación; `xpack.security.enabled=false` existe únicamente para la red Docker local de entrenamiento.
 
 ## Licencia
 

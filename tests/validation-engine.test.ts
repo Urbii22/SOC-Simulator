@@ -50,6 +50,25 @@ describe('strict scenario validation engine', () => {
     expect(has(result, 'semantics', 'unknown evidence')).toBe(true);
   });
 
+  it('detects duplicate entities and contradictory scenario metadata', () => {
+    const scenario = clone();
+    scenario.hosts.push(scenario.hosts[0]);
+    scenario.dataSources.push(scenario.dataSources[0]);
+    scenario.questions.find(({ type }) => type === 'single')!.options!.push(scenario.questions.find(({ type }) => type === 'single')!.options![0]);
+    scenario.expectedVerdict = 'false-positive';
+    scenario.metadata.correlation = 'single-source';
+    const result = validateScenarioDetailed(scenario);
+    expect(has(result, 'semantics', 'duplicate host')).toBe(true);
+    expect(has(result, 'semantics', 'duplicate data source')).toBe(true);
+    expect(has(result, 'semantics', 'duplicate option')).toBe(true);
+    expect(has(result, 'semantics', 'contradicts expectedVerdict')).toBe(true);
+    expect(has(result, 'semantics', 'single-source correlation')).toBe(true);
+
+    const nondeterministic = clone() as unknown as { metadata: Record<string, unknown> };
+    nondeterministic.metadata.deterministic = false;
+    expect(has(validateScenarioDetailed(nondeterministic), 'schema', 'Invalid literal value')).toBe(true);
+  });
+
   it('detects contradictory answer evidence and answer types', () => {
     const scenario = clone();
     scenario.answers.anchor.evidenceTerms = ['not-present-anywhere'];
@@ -63,6 +82,14 @@ describe('strict scenario validation engine', () => {
     expect(has(result, 'semantics', 'has no answer')).toBe(true);
   });
 
+  it('requires declared evidence fields to exist on the referenced events', () => {
+    const scenario = clone();
+    scenario.answers.anchor.evidence.fields = ['details.process'];
+    scenario.answers.anchor.evidence.eventRefs = ['suspicious-rdp-login:timeline:1'];
+    delete scenario.answers.anchor.evidenceTerms;
+    expect(has(validateScenarioDetailed(scenario), 'semantics', 'is absent from referenced evidence')).toBe(true);
+  });
+
   it('detects invalid timestamps and causal ordering', () => {
     const invalidTimestamp = clone();
     invalidTimestamp.metadata.baseTimestamp = 'yesterday';
@@ -74,6 +101,10 @@ describe('strict scenario validation engine', () => {
     const result = validateScenarioDetailed(scheduled);
     expect(has(result, 'timeline', 'out of causal order')).toBe(true);
     expect(has(result, 'timeline', 'starts before')).toBe(true);
+
+    const equalOffsets = clone();
+    equalOffsets.attackEvents[1].offsetMinutes = equalOffsets.attackEvents[0].offsetMinutes;
+    expect(has(validateScenarioDetailed(equalOffsets), 'timeline', 'equal offsets')).toBe(true);
   });
 
   it('proves fixed-seed stability and alternate-seed variation', () => {
@@ -120,6 +151,10 @@ describe('strict scenario validation engine', () => {
     expect(has(result, 'queries', 'duplicate KQL')).toBe(true);
     expect(has(result, 'queries', 'no literal that can match')).toBe(true);
     expect(has(result, 'queries', 'requires undeclared source email')).toBe(true);
+
+    const impossibleConjunction = clone();
+    impossibleConjunction.queries.kql = ['host:"rd-gw-01" and eventCode:"NEVER"'];
+    expect(has(validateScenarioDetailed(impossibleConjunction), 'queries', 'conjunction matches no generated event')).toBe(true);
   });
 
   it('parses Sigma YAML and detects broken selectors, fields and event matches', () => {
@@ -137,6 +172,10 @@ describe('strict scenario validation engine', () => {
     expect(has(result, 'sigma', 'unknown selector missing')).toBe(true);
     expect(has(result, 'sigma', 'unavailable field ghost.field')).toBe(true);
     expect(has(result, 'sigma', 'matches no generated event')).toBe(true);
+
+    const impossibleCondition = clone();
+    impossibleCondition.queries.sigma = 'title: Impossible conjunction\nstatus: test\nlogsource:\n  category: security\ndetection:\n  first:\n    eventCode: ALLOW-3389\n  second:\n    eventCode: 4624\n  condition: first and second\nlevel: high';
+    expect(has(validateScenarioDetailed(impossibleCondition), 'sigma', 'condition matches no generated event')).toBe(true);
   });
 
   it('emits transparent quality metrics and triviality warnings', () => {
@@ -156,8 +195,10 @@ describe('strict scenario validation engine', () => {
     const output: string[] = []; const errors: string[] = [];
     expect(runValidationCli(['--scenario', 'mixed-alert-incident', '--json'], { out: (value) => output.push(value), error: (value) => errors.push(value) })).toBe(0);
     expect(JSON.parse(output.join('\n'))).toMatchObject({ summary: { scenarios: 1, errors: 0, events: 229 } });
-    expect(runValidationCli(['--scenario', 'dns-tunneling', '--strict'], { out: () => undefined, error: () => undefined })).toBe(1);
+    expect(runValidationCli(['--scenario', 'dns-tunneling', '--strict'], { out: () => undefined, error: () => undefined })).toBe(0);
     expect(runValidationCli(['--scenario', 'does-not-exist'], { out: () => undefined, error: (value) => errors.push(value) })).toBe(2);
+    expect(runValidationCli(['--scenario='], { out: () => undefined, error: (value) => errors.push(value) })).toBe(2);
+    expect(runValidationCli(['--scenario', '--strict'], { out: () => undefined, error: (value) => errors.push(value) })).toBe(2);
     const clean = validateScenarioCatalog([clone('mixed-alert-incident')]);
     expect(validationExitCode(clean, false)).toBe(0);
   });

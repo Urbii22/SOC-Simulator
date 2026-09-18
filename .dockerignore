@@ -3,6 +3,14 @@ dist
 datasets
 coverage
 .git
+.github
+.playwright-cli
 data
+docs
+infra
 output
+.env*
+README.md
+LICENSE
+compose.yaml
 *.log

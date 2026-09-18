@@ -10,6 +10,8 @@ describe('training API', () => {
   it('reports health and lists summaries without solution data', async () => {
     const health = await request(app).get('/api/health').expect(200);
     expect(health.body).toMatchObject({ status: 'ok', scenarios: 30 });
+    expect(health.headers['content-security-policy']).toContain("default-src 'self'");
+    expect(health.headers['x-content-type-options']).toBe('nosniff');
     const result = await request(app).get('/api/scenarios').expect(200);
     expect(result.body).toHaveLength(30);
     expect(result.body[0]).not.toHaveProperty('answers');
@@ -77,9 +79,57 @@ describe('training API', () => {
     expect(result.body).not.toHaveProperty('timeline');
   });
 
+  it('rejects answer type confusion, invalid choices and unknown question ids', async () => {
+    const answers = {
+      anchor: 'sshd-01', terminal: 'execve', source: '185.220.101.34',
+      technique: 'T1110.001', verdict: true, containment: 'Aislar bastion-01 de la red',
+    };
+    await request(app).post('/api/scenarios/ssh-brute-force/submit')
+      .send({ answers: { ...answers, verdict: 'true' } }).expect(400);
+    await request(app).post('/api/scenarios/ssh-brute-force/submit')
+      .send({ answers: { ...answers, technique: 'prefixT1110.001suffix' } }).expect(400);
+    await request(app).post('/api/scenarios/ssh-brute-force/submit')
+      .send({ answers: { ...answers, ghost: 'ignored' } }).expect(400);
+  });
+
+  it('maps malformed and oversized JSON to controlled client errors', async () => {
+    const malformed = await request(app).post('/api/scenarios/ssh-brute-force/submit')
+      .set('Content-Type', 'application/json').send('{bad').expect(400);
+    expect(malformed.body).toEqual({ error: 'Invalid JSON body' });
+    const oversized = await request(app).post('/api/scenarios/ssh-brute-force/submit')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ answers: { anchor: 'x'.repeat(140_000) } })).expect(413);
+    expect(oversized.body).toEqual({ error: 'Request body too large' });
+  });
+
+  it('rejects state-changing browser requests from non-local origins', async () => {
+    await request(createApp()).patch('/api/scenarios/ssh-brute-force')
+      .set('Origin', 'https://untrusted.example')
+      .send({ notes: 'cross-site write' }).expect(403, { error: 'Origin not allowed' });
+  });
+
+  it('keeps scores within integer bounds for adversarial complete submissions', async () => {
+    const questionIds = scenarioDefinitions[0].questions.map(({ id }) => id);
+    for (let run = 0; run < 25; run++) {
+      const answers: Record<string, string | boolean> = Object.fromEntries(questionIds.map((id, index) => [id, `${run}-${index}-\u200b`]));
+      answers.verdict = run % 2 === 0;
+      answers.technique = ['T1110.001', 'T1055', 'T1047', 'T1087'][run % 4];
+      const result = await request(app).post('/api/scenarios/ssh-brute-force/submit').send({ answers }).expect(200);
+      expect(Number.isInteger(result.body.score)).toBe(true);
+      expect(result.body.score).toBeGreaterThanOrEqual(0);
+      expect(result.body.score).toBeLessThanOrEqual(100);
+    }
+  });
+
   it('rejects invalid states and unknown scenarios', async () => {
     await request(app).patch('/api/scenarios/ssh-brute-force').send({ status: 'Deleted' }).expect(400);
     await request(app).get('/api/scenarios/not-real').expect(404);
+  });
+
+  it('rejects malformed and unbounded query parameters', async () => {
+    await request(app).get('/api/scenarios').query({ severity: 'urgent' }).expect(400, { error: 'Invalid query' });
+    await request(app).get('/api/scenarios').query({ search: 'x'.repeat(201) }).expect(400, { error: 'Invalid query' });
+    await request(app).get('/api/scenarios/ssh-brute-force/events?q=one&q=two').expect(400, { error: 'Invalid query' });
   });
 
   it('only grants browser CORS access to local origins', async () => {

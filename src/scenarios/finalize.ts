@@ -46,7 +46,7 @@ export function finalizeScenario(draft: ScenarioDraft, index: number): ScenarioD
   const relevantSources = new Set(attackSources).size;
   const correlation = draft.expectedVerdict !== 'true-positive' ? 'ambiguous'
     : /multi-stage|→/i.test(draft.category) ? 'multi-stage'
-      : relevantSources >= 3 ? 'multi-source' : 'single-source';
+      : relevantSources >= 2 ? 'multi-source' : 'single-source';
   const answers = Object.fromEntries(Object.entries(draft.answers).map(([id, answer]) => [id, { ...answer, evidence: answerEvidence(draft, id) }]));
   return {
     ...draft,

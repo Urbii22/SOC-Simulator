@@ -18,7 +18,7 @@ describe('scenario quality gates', () => {
   it('passes the complete catalog validation', () => {
     const result = validateScenarioCatalog();
     expect(result.issues).toEqual([]);
-    expect(result.totalEvents).toBe(2946);
+    expect(result.totalEvents).toBe(2951);
   });
 
   it('adds exactly twenty distinct scenarios', () => {

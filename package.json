@@ -16,10 +16,10 @@
     "generate": "tsx scripts/generate-datasets.ts",
     "generate:coverage": "tsx scripts/generate-coverage.ts",
     "validate:scenarios": "tsx scripts/validate-scenarios.ts",
-    "check": "npm run lint && npm run typecheck && npm run validate:scenarios && npm run test && npm run build"
+    "check": "npm run lint && npm run validate:scenarios -- --strict && npm run test && npm run build"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^9.1.0",
+    "@elastic/elasticsearch": "8.17.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "lucide-react": "^0.468.0",

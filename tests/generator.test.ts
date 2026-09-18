@@ -42,4 +42,24 @@ describe('scenario generator', () => {
     expect(evidence).toContain(scenario.primaryUser.toLowerCase());
     expect(evidence).toContain(String(scenario.answers.source.value).toLowerCase());
   });
+
+  it('does not classify benign events as solution evidence merely because messages collide', () => {
+    const scenario = structuredClone(scenarioDefinitions[0]);
+    scenario.attackEvents[0].message = 'Query A packages.internal.example';
+    const events = generateScenarioEvents(scenario);
+    const timeline = getAttackEvents(scenario, events);
+    expect(timeline).toHaveLength(scenario.attackEvents.length);
+    expect(timeline.filter((event) => event.message === 'Query A packages.internal.example')).toHaveLength(1);
+  });
+
+  it('preserves determinism, ordering and unique ids across a range of seeds', () => {
+    const scenario = scenarioDefinitions[0];
+    for (let seed = 0; seed < 64; seed++) {
+      const first = generateScenarioEvents(scenario, seed);
+      const second = generateScenarioEvents(scenario, seed);
+      expect(first).toEqual(second);
+      expect(new Set(first.map(({ id }) => id)).size).toBe(first.length);
+      expect(first.map(({ timestamp }) => timestamp)).toEqual([...first.map(({ timestamp }) => timestamp)].sort());
+    }
+  });
 });

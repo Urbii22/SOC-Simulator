@@ -33,11 +33,15 @@ sequenceDiagram
 
 ## Persistencia
 
-Estados, notas y progreso se guardan en `data/state.json`. Los datasets no se almacenan porque son deterministas. Docker utiliza un volumen para el estado y otro para Elasticsearch.
+Estados, notas y progreso se guardan en `data/state.json`, dentro de un documento con `schemaVersion`. El lector acepta el formato legado sin envoltorio, valida tipos y límites al arrancar y rechaza de forma explícita JSON truncado o incompatible. Las escrituras se realizan mediante fichero temporal y renombrado para no dejar estados parciales; si fallan, tampoco se confirma el cambio en memoria.
+
+La aplicación está diseñada para una sola instancia local. Las actualizaciones son síncronas dentro del proceso y, ante dos cambios válidos simultáneos sobre las mismas notas, prevalece el último. No existe coordinación entre varios procesos que compartan el mismo fichero. Los estados son etiquetas de flujo para el ejercicio, no una máquina de estados normativa: el analista puede reclasificar o reabrir un caso sin una secuencia obligatoria.
+
+Los datasets no se almacenan porque son deterministas. Docker utiliza un volumen para el estado y otro para Elasticsearch.
 
 ## Elasticsearch
 
-`POST /api/elastic/sync` crea `soc-training-events`, aplica mappings de fecha, keyword e IP y realiza un bulk idempotente usando el ID del evento. Kibana trabaja sobre ese índice.
+`POST /api/elastic/sync` crea `soc-training-events`, aplica mappings de fecha, keyword e IP y realiza un bulk idempotente usando el ID del evento. Sólo se permite una sincronización simultánea por proceso y el cliente se cierra al terminar. Kibana trabaja sobre ese índice.
 
 ## Validación del catálogo
 
