@@ -26,10 +26,9 @@ const benignTemplates: Array<{ source: EventSource; code: string; action: string
   { source: 'dns', code: 'DNS-Q', action: 'dns_query', message: 'Query A time.windows.example', details: { qtype: 'A' } },
 ];
 
-export function generateScenarioEvents(definition: ScenarioDefinition, seed = 20260918): SecurityEvent[] {
+export function generateScenarioEvents(definition: ScenarioDefinition, seed = definition.metadata.defaultSeed): SecurityEvent[] {
   const random = seeded(seed + definition.id.length * 97);
-  const day = scenarioDefinitionsIndex(definition.id) + 1;
-  const base = new Date(`2026-09-${String(day).padStart(2, '0')}T08:00:00.000Z`);
+  const base = new Date(definition.metadata.baseTimestamp);
   const selectedTemplates = definition.noiseSources?.length
     ? benignTemplates.filter((template) => definition.noiseSources!.includes(template.source))
     : benignTemplates.slice(0, 6);
@@ -58,17 +57,4 @@ export function generateScenarioEvents(definition: ScenarioDefinition, seed = 20
 export function getAttackEvents(definition: ScenarioDefinition, events = generateScenarioEvents(definition)): SecurityEvent[] {
   const messages = new Set(definition.attackEvents.map((item) => item.message));
   return events.filter((item) => messages.has(item.message));
-}
-
-function scenarioDefinitionsIndex(id: string): number {
-  const ids = [
-    'ssh-brute-force', 'password-spraying', 'credential-stuffing', 'suspicious-powershell', 'phishing-payload',
-    'dns-tunneling', 'malware-beaconing', 'webshell', 'privilege-escalation', 'data-exfiltration',
-    'suspicious-rdp-login', 'account-lockout', 'web-directory-bruteforce', 'suspicious-scheduled-task', 'browser-download',
-    'phishing-powershell', 'web-account-privilege-abuse', 'suspicious-smb', 'dns-beaconing', 'credential-dumping',
-    'lateral-movement-remote-services', 'registry-run-keys', 'initial-access-execution-persistence', 'spray-compromise-recon',
-    'web-exploit-webshell-command', 'endpoint-c2-exfiltration', 'phishing-credential-cloud-abuse', 'ambiguous-admin-activity',
-    'possible-data-exfiltration', 'mixed-alert-incident',
-  ];
-  return Math.max(0, ids.indexOf(id));
 }

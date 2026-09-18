@@ -68,7 +68,8 @@ Kibana queda en [http://localhost:5601](http://localhost:5601). Importa `infra/k
 |---|---|
 | `npm run dev` | API y web con recarga |
 | `npm run generate` | Genera un NDJSON por escenario en `datasets/` |
-| `npm run validate:scenarios` | Valida determinismo, evidencias, IOC, MITRE, consultas y coherencia |
+| `npm run generate:coverage` | Regenera la matriz de cobertura desde el catálogo |
+| `npm run validate:scenarios` | Valida schema, determinismo, evidencias, IOC, MITRE, consultas, Sigma y spoilers |
 | `npm test` | Ejecuta la suite de pruebas |
 | `npm run typecheck` | TypeScript estricto en cliente y servidor |
 | `npm run lint` | ESLint |
@@ -124,6 +125,7 @@ Los cuerpos de escritura se validan con Zod y tienen límites de tamaño. La API
 - [Guía del estudiante](docs/STUDENT_GUIDE.md)
 - [Guía del instructor](docs/INSTRUCTOR_GUIDE.md)
 - [Crear escenarios](docs/CREATING_SCENARIOS.md)
+- [Motor de validación](docs/VALIDATION.md)
 - [Catálogo de escenarios](docs/SCENARIOS.md)
 - [Matriz de cobertura](docs/COVERAGE_MATRIX.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)

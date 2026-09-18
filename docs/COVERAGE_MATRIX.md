@@ -1,38 +1,42 @@
 # Matriz de cobertura
 
-Esta matriz se usa para revisar diversidad y progresión. “Correlación” resume la amplitud mínima esperada; no revela IOC ni conclusiones específicas.
+> Generada automáticamente con `npm run generate:coverage`. No editar manualmente.
 
-| ID | Fuentes relevantes | Técnicas | Tácticas / tipo | Dificultad | Hosts | Usuarios | Resultado | Correlación |
-|---:|---|---|---|---|---:|---:|---|---|
-| 1 | auth, Linux | T1110.001 | Credential Access | Foundation | 4 | 4 | TP | 2 fuentes |
-| 2 | auth, HTTP | T1110.003 | Credential Access | Foundation | 4 | 4 | TP | identidad + sesión |
-| 3 | HTTP, auth, network | T1110.004 | Initial Access | Intermediate | 4 | 4 | TP | 3 fuentes |
-| 4 | Sysmon, Windows | T1059.001 | Execution | Intermediate | 4 | 4 | TP | proceso + persistencia |
-| 5 | HTTP, Sysmon | T1566.001 | Initial Access | Intermediate | 4 | 4 | TP | descarga + proceso |
-| 6 | DNS, network | T1071.004 | Command and Control | Advanced | 4 | 4 | TP | patrón temporal |
-| 7 | Sysmon, network, Suricata | T1071.001 | Command and Control | Advanced | 4 | 4 | TP | proceso + cadencia |
-| 8 | HTTP, Linux | T1505.003 | Persistence | Advanced | 4 | 4 | TP | archivo + ejecución |
-| 9 | Windows, Sysmon | T1543.003 | Privilege Escalation | Intermediate | 4 | 4 | TP | cambio + proceso |
-| 10 | Windows, Sysmon, HTTP, network | T1567.002 | Exfiltration | Advanced | 4 | 4 | TP | acceso + archivo + transferencia |
-| 11 | firewall, Windows, auth, Sysmon | T1021.001, T1078 | Lateral Movement | Foundation | 4 | 3 | TP | gateway + logon + proceso |
-| 12 | Windows, auth, endpoint | T1110.001 | Credential Access | Foundation | 3 | 4 | TP | cuenta + origen + servicio |
-| 13 | HTTP, Suricata, firewall | T1595.003 | Reconnaissance | Foundation | 4 | 3 | TP | rutas + detección + bloqueo |
-| 14 | Sysmon, Windows, endpoint | T1053.005 | Persistence | Foundation | 3 | 4 | TP | creador + tarea + ejecución |
-| 15 | DNS, HTTP, endpoint, Windows, Sysmon | T1204.002, T1105 | Execution | Foundation | 3 | 3 | TP | navegación + fichero + proceso |
-| 16 | email, DNS, HTTP, Sysmon, Windows, endpoint | T1566.002, T1059.001 | Initial Access / Execution | Intermediate | 4 | 3 | TP | mensaje → proceso |
-| 17 | auth, HTTP, cloud | T1078, T1098.003 | Persistence | Intermediate | 3 | 4 | TP | sesión → rol |
-| 18 | Sysmon, firewall, Windows, network | T1135, T1021.002 | Discovery / Lateral Movement | Intermediate | 6 | 3 | TP | origen + varios destinos |
-| 19 | endpoint, DNS, network, Sysmon | T1071.004 | Command and Control | Intermediate | 4 | 3 | TP | periodicidad + proceso |
-| 20 | Windows, Sysmon, endpoint | T1003.001 | Credential Access | Intermediate | 3 | 3 | TP | privilegios + acceso LSASS |
-| 21 | auth, firewall, Windows, Sysmon, network | T1021.006, T1078.002 | Lateral Movement | Intermediate | 7 | 3 | TP | Kerberos → WinRM |
-| 22 | Sysmon, endpoint, Windows, DNS | T1547.001 | Persistence | Intermediate | 3 | 3 | TP | registro → siguiente logon |
-| 23 | HTTP, Suricata, Linux, DNS, network, firewall | T1190, T1059.004, T1053.003 | Intrusión multi-stage | Advanced | 5 | 5 | TP | 6 fuentes / 3 fases |
-| 24 | cloud, auth, firewall, Windows, Sysmon | T1110.003, T1078, T1087.002 | Credential Access / Discovery | Advanced | 6 | 4 | TP | Internet → VPN → AD |
-| 25 | HTTP, Suricata, Linux, network | T1190, T1505.003, T1059.004 | Initial Access / Persistence | Advanced | 5 | 6 | TP | exploit → shell → datos |
-| 26 | endpoint, DNS, network, Sysmon, HTTP, firewall | T1204.002, T1071.001, T1560.001, T1041 | C2 / Exfiltration | Advanced | 4 | 4 | TP | endpoint → C2 → salida |
-| 27 | email, DNS, HTTP, cloud, auth | T1566.002, T1056.003, T1078.004 | Initial Access / Cloud Abuse | Advanced | 7 | 3 | TP | phishing → tenant |
-| 28 | auth, firewall, Windows, Sysmon, endpoint | T1021.001 | Remote Administration | Advanced | 5 | 3 | FP | alerta + cambio aprobado |
-| 29 | cloud, endpoint, Windows, firewall, HTTP, network | T1567.002, T1560.001 | Data Transfer | Advanced | 7 | 4 | FP | transferencia + contrato |
-| 30 | Windows, firewall, auth, Sysmon, DNS, HTTP, endpoint | T1078.002, T1021.002, T1041 | Multi-Alert | Advanced | 7 | 6 | Mixto | varias hipótesis / alcance |
+| ID | Escenario | Dificultad | Categoría | Fuentes declaradas | Eventos | Hosts | Usuarios | IOC | MITRE (táctica) | Resultado | Correlación |
+|---:|---|---|---|---|---:|---:|---:|---:|---|---|---|
+| 1 | ssh-brute-force — SSH brute force contra bastión | Foundation | Initial Access | dns, http, auth, network, windows, linux | 46 | 4 | 5 | 1 | T1110.001 (Credential Access) | true-positive | 2 fuentes / 4 evidencias |
+| 2 | password-spraying — Password spraying en Microsoft 365 | Foundation | Credential Access | dns, http, auth, network, windows, linux | 46 | 5 | 5 | 2 | T1110.003 (Credential Access) | true-positive | 2 fuentes / 4 evidencias |
+| 3 | credential-stuffing — Credential stuffing en portal VPN | Intermediate | Initial Access | dns, http, auth, network, windows, linux | 46 | 5 | 4 | 1 | T1110.004 (Credential Access) | true-positive | 3 fuentes / 4 evidencias |
+| 4 | suspicious-powershell — PowerShell codificado en estación financiera | Intermediate | Execution | dns, http, auth, network, windows, linux, sysmon | 46 | 4 | 5 | 2 | T1059.001 (Execution) | true-positive | 2 fuentes / 4 evidencias |
+| 5 | phishing-payload — Phishing con documento señuelo | Intermediate | Initial Access | dns, http, auth, network, windows, linux, sysmon | 46 | 5 | 4 | 2 | T1566.001 (Initial Access) | true-positive | 2 fuentes / 4 evidencias |
+| 6 | dns-tunneling — Túnel DNS desde equipo de I+D | Advanced | Command and Control | dns, http, auth, network, windows, linux | 46 | 4 | 4 | 1 | T1071.004 (Command and Control) | true-positive | 2 fuentes / 4 evidencias |
+| 7 | malware-beaconing — Beaconing TLS de baja frecuencia | Advanced | Command and Control | dns, http, auth, network, windows, linux, sysmon, suricata | 46 | 4 | 4 | 2 | T1071.001 (Command and Control) | true-positive | 3 fuentes / 4 evidencias |
+| 8 | webshell — Webshell en servidor de soporte | Advanced | Persistence | dns, http, auth, network, windows, linux | 46 | 4 | 5 | 2 | T1505.003 (Persistence) | true-positive | 2 fuentes / 4 evidencias |
+| 9 | privilege-escalation — Escalada local mediante servicio vulnerable | Intermediate | Privilege Escalation | dns, http, auth, network, windows, linux, sysmon | 46 | 4 | 5 | 1 | T1543.003 (Privilege Escalation) | true-positive | 2 fuentes / 4 evidencias |
+| 10 | data-exfiltration — Exfiltración a almacenamiento cloud | Advanced | Exfiltration | dns, http, auth, network, windows, linux, sysmon | 46 | 4 | 4 | 2 | T1567.002 (Exfiltration) | true-positive | 4 fuentes / 4 evidencias |
+| 11 | suspicious-rdp-login — Inicio RDP fuera de patrón | Foundation | Lateral Movement | windows, auth, firewall, sysmon | 62 | 4 | 3 | 1 | T1021.001 (Lateral Movement), T1078 (Defense Evasion) | true-positive | 4 fuentes / 6 evidencias |
+| 12 | account-lockout — Bloqueo repetido de cuenta de RR. HH. | Foundation | Credential Access | windows, auth, endpoint | 63 | 3 | 4 | 1 | T1110.001 (Credential Access) | true-positive | 3 fuentes / 5 evidencias |
+| 13 | web-directory-bruteforce — Enumeración de directorios web | Foundation | Reconnaissance | http, firewall, suricata, dns | 66 | 4 | 3 | 1 | T1595.003 (Reconnaissance) | true-positive | 3 fuentes / 5 evidencias |
+| 14 | suspicious-scheduled-task — Tarea programada fuera de estándar | Foundation | Persistence | windows, sysmon, endpoint | 65 | 3 | 4 | 1 | T1053.005 (Persistence) | true-positive | 3 fuentes / 5 evidencias |
+| 15 | browser-download — Descarga sospechosa desde navegador | Foundation | Execution | dns, http, endpoint, sysmon, windows | 69 | 3 | 3 | 2 | T1204.002 (Execution), T1105 (Command and Control) | true-positive | 5 fuentes / 6 evidencias |
+| 16 | phishing-powershell — Enlace de phishing y ejecución PowerShell | Intermediate | Initial Access → Execution | email, dns, http, endpoint, sysmon, windows | 94 | 4 | 3 | 2 | T1566.002 (Initial Access), T1059.001 (Execution) | true-positive | 6 fuentes / 6 evidencias |
+| 17 | web-account-privilege-abuse — Cuenta web comprometida y abuso de privilegios | Intermediate | Persistence | auth, http, cloud, firewall | 100 | 3 | 4 | 2 | T1078 (Defense Evasion), T1098.003 (Persistence) | true-positive | 3 fuentes / 6 evidencias |
+| 18 | suspicious-smb — Actividad SMB anómala entre segmentos | Intermediate | Discovery / Lateral Movement | windows, sysmon, network, firewall | 102 | 6 | 3 | 1 | T1135 (Discovery), T1021.002 (Lateral Movement) | true-positive | 4 fuentes / 6 evidencias |
+| 19 | dns-beaconing — Beaconing DNS de baja cadencia | Intermediate | Command and Control | dns, network, endpoint, sysmon | 107 | 4 | 3 | 2 | T1071.004 (Command and Control) | true-positive | 4 fuentes / 6 evidencias |
+| 20 | credential-dumping — Indicadores de volcado de credenciales | Intermediate | Credential Access | windows, sysmon, endpoint | 103 | 3 | 3 | 2 | T1003.001 (Credential Access) | true-positive | 3 fuentes / 5 evidencias |
+| 21 | lateral-movement-remote-services — Movimiento lateral mediante WinRM | Intermediate | Lateral Movement | auth, windows, firewall, network, sysmon | 111 | 7 | 3 | 1 | T1021.006 (Lateral Movement), T1078.002 (Defense Evasion) | true-positive | 5 fuentes / 7 evidencias |
+| 22 | registry-run-keys — Persistencia mediante Registry Run Keys | Intermediate | Persistence | sysmon, windows, endpoint, dns | 105 | 3 | 3 | 1 | T1547.001 (Persistence) | true-positive | 4 fuentes / 6 evidencias |
+| 23 | initial-access-execution-persistence — Acceso inicial, shell y persistencia cron | Advanced | Multi-stage Intrusion | http, suricata, linux, network, dns, firewall | 163 | 5 | 5 | 3 | T1190 (Initial Access), T1059.004 (Execution), T1053.003 (Persistence) | true-positive | 6 fuentes / 9 evidencias |
+| 24 | spray-compromise-recon — Password spray, VPN y reconocimiento interno | Advanced | Credential Access → Discovery | cloud, auth, network, windows, sysmon, firewall | 172 | 6 | 4 | 2 | T1110.003 (Credential Access), T1078 (Defense Evasion), T1087.002 (Discovery) | true-positive | 5 fuentes / 8 evidencias |
+| 25 | web-exploit-webshell-command — Explotación web, webshell y acceso a base de datos | Advanced | Initial Access → Persistence | http, suricata, linux, network, firewall | 176 | 5 | 6 | 2 | T1190 (Initial Access), T1505.003 (Persistence), T1059.004 (Execution) | true-positive | 4 fuentes / 8 evidencias |
+| 26 | endpoint-c2-exfiltration — Endpoint, C2 y exfiltración por canal web | Advanced | Command and Control → Exfiltration | endpoint, sysmon, dns, network, firewall, http, windows | 191 | 4 | 4 | 3 | T1204.002 (Execution), T1071.001 (Command and Control), T1560.001 (Collection), T1041 (Exfiltration) | true-positive | 6 fuentes / 9 evidencias |
+| 27 | phishing-credential-cloud-abuse — Phishing, robo de credenciales y abuso cloud | Advanced | Initial Access → Cloud Abuse | email, dns, http, cloud, auth, firewall | 184 | 7 | 3 | 2 | T1566.002 (Initial Access), T1056.003 (Credential Access), T1078.004 (Initial Access) | true-positive | 5 fuentes / 8 evidencias |
+| 28 | ambiguous-admin-activity — Actividad administrativa: ¿incidente o cambio? | Advanced | Triage / Remote Administration | auth, windows, sysmon, firewall, endpoint | 155 | 5 | 3 | 1 | T1021.001 (Lateral Movement) | false-positive | 5 fuentes / 7 evidencias |
+| 29 | possible-data-exfiltration — Posible exfiltración o copia autorizada | Advanced | Triage / Data Transfer | endpoint, http, network, cloud, firewall, windows | 169 | 7 | 4 | 1 | T1567.002 (Exfiltration), T1560.001 (Collection) | false-positive | 6 fuentes / 7 evidencias |
+| 30 | mixed-alert-incident — Incidente multialerta con señales mixtas | Advanced | Multi-Alert Investigation | windows, sysmon, endpoint, network, firewall, auth, dns, http | 229 | 7 | 6 | 2 | T1078.002 (Defense Evasion), T1021.002 (Lateral Movement), T1041 (Exfiltration) | mixed | 7 fuentes / 10 evidencias |
 
-Balance del catálogo: 7 Foundation, 11 Intermediate y 12 Advanced; 27 TP, 2 FP y 1 mixto. Los escenarios avanzados nuevos usan entre 4 y 8 fuentes generadas y requieren timelines multihost o validación contextual.
+## Distribución
+
+- Técnicas: T1078: 3, T1110.001: 2, T1110.003: 2, T1059.001: 2, T1071.004: 2, T1071.001: 2, T1505.003: 2, T1567.002: 2, T1021.001: 2, T1204.002: 2, T1566.002: 2, T1021.002: 2, T1078.002: 2, T1190: 2, T1059.004: 2, T1560.001: 2, T1041: 2, T1110.004: 1, T1566.001: 1, T1543.003: 1, T1595.003: 1, T1053.005: 1, T1105: 1, T1098.003: 1, T1135: 1, T1003.001: 1, T1021.006: 1, T1547.001: 1, T1053.003: 1, T1087.002: 1, T1056.003: 1, T1078.004: 1.
+- Fuentes: windows: 24, http: 20, dns: 19, network: 19, auth: 18, sysmon: 18, firewall: 13, linux: 12, endpoint: 11, suricata: 4, cloud: 4, email: 2.
+- Validación: 0 errores, 3 warnings, 71 observaciones; 2946 eventos.

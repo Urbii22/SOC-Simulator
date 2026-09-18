@@ -1,5 +1,7 @@
 import type { EventSource, Ioc, InvestigationQuestion, MitreTechnique, Severity } from '../../domain/types.js';
-import type { AnswerKey, AttackEvent, ScenarioDefinition } from '../model.js';
+import type { AttackEvent, ScenarioDefinition, ScenarioDraft } from '../model.js';
+
+type DraftAnswerKey = ScenarioDraft['answers'][string];
 
 export interface FocusQuestion {
   prompt: string;
@@ -52,7 +54,7 @@ function verdictQuestion(verdict: ExpandedSpec['verdict']): InvestigationQuestio
   return { id: 'verdict', prompt: '¿La alerta representa actividad maliciosa confirmada?', type: 'boolean', points: 10 };
 }
 
-function verdictAnswer(verdict: ExpandedSpec['verdict']): AnswerKey {
+function verdictAnswer(verdict: ExpandedSpec['verdict']): DraftAnswerKey {
   if (verdict === 'mixed') return { value: 'Mixed', aliases: ['mixto', 'mixed true and false positives'], explanation: 'Hay señales legítimas y maliciosas; deben clasificarse por separado.', evidenceTerms: ['approved', 'unauthorized'] };
   const isTrue = verdict === 'true-positive';
   return {
@@ -63,13 +65,14 @@ function verdictAnswer(verdict: ExpandedSpec['verdict']): AnswerKey {
   };
 }
 
-export function makeScenario(spec: ExpandedSpec): ScenarioDefinition {
+export function makeScenario(spec: ExpandedSpec): ScenarioDraft {
   const firstRelevant = [...spec.events].sort((left, right) => left.offsetMinutes - right.offsetMinutes)[0];
+  const lastRelevant = [...spec.events].sort((left, right) => right.offsetMinutes - left.offsetMinutes)[0];
   const users = [...new Set([spec.user, ...spec.events.map((item) => item.user), 'svc.backup', 'analyst.ops'].filter((value): value is string => Boolean(value)))];
   const hosts = [...new Set([spec.host, ...spec.events.map((item) => item.host), 'dc-02', 'proxy-02'])];
   const questions: InvestigationQuestion[] = [
-    { id: 'host', prompt: '¿En qué host aparece el primer evento relevante de la cadena?', type: 'text', points: 15 },
-    { id: 'user', prompt: '¿Qué identidad está asociada a ese primer evento?', type: 'text', points: 10 },
+    { id: 'anchor', prompt: '¿Qué eventCode ancla el primer evento de la cadena relevante?', type: 'text', points: 15 },
+    { id: 'terminal', prompt: '¿Qué eventCode permite cerrar o contrastar la timeline?', type: 'text', points: 10 },
     { id: 'source', prompt: '¿Cuál es el origen que permite pivotar la investigación?', type: 'text', points: 10 },
     { id: 'pivot', prompt: spec.pivot.prompt, type: 'text', points: 15 },
     { id: 'technique', prompt: '¿Qué técnica MITRE ATT&CK describe mejor el pivote principal?', type: 'single', options: [spec.techniques[0].id, 'T1055', 'T1047', 'T1087'], points: 15 },
@@ -84,8 +87,8 @@ export function makeScenario(spec: ExpandedSpec): ScenarioDefinition {
     users, hosts, alerts: spec.alerts, noiseCount: spec.noiseCount, noiseSources: spec.noiseSources,
     expectedVerdict: spec.verdict, attackEvents: spec.events, questions,
     answers: {
-      host: { value: firstRelevant.host, explanation: `${firstRelevant.host} registra el inicio de la timeline relevante.`, evidenceTerms: [firstRelevant.host, firstRelevant.eventCode] },
-      user: { value: firstRelevant.user ?? 'unknown', explanation: `${firstRelevant.user ?? 'unknown'} está asociado al primer evento relevante.`, evidenceTerms: [firstRelevant.user ?? 'unknown'] },
+      anchor: { value: firstRelevant.eventCode, explanation: `${firstRelevant.eventCode} registra el inicio de la timeline relevante.`, evidenceTerms: [firstRelevant.eventCode, firstRelevant.message] },
+      terminal: { value: lastRelevant.eventCode, explanation: `${lastRelevant.eventCode} cierra o contrasta la timeline relevante.`, evidenceTerms: [lastRelevant.eventCode, lastRelevant.message] },
       source: { value: spec.sourceIp, explanation: `${spec.sourceIp} es el origen útil para correlacionar.`, evidenceTerms: [spec.sourceIp] },
       pivot: { value: spec.pivot.value, aliases: spec.pivot.aliases, explanation: `El pivote demostrable es ${spec.pivot.value}.`, evidenceTerms: spec.pivot.evidenceTerms },
       technique: { value: spec.techniques[0].id, aliases: [spec.techniques[0].name], explanation: `${spec.techniques[0].id}: ${spec.techniques[0].name}.`, evidenceTerms: [spec.events[0].eventCode] },

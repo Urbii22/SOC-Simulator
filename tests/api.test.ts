@@ -49,7 +49,7 @@ describe('training API', () => {
 
   it('grades correct answers and unlocks the explained solution', async () => {
     const result = await request(app).post('/api/scenarios/ssh-brute-force/submit').send({ answers: {
-      host: 'bastion-01', user: 'deploy', source: '185.220.101.34', technique: 'T1110.001', verdict: true, containment: 'Aislar bastion-01 de la red',
+      anchor: 'sshd-01', terminal: 'execve', source: '185.220.101.34', technique: 'T1110.001', verdict: true, containment: 'Aislar bastion-01 de la red',
     } }).expect(200);
     expect(result.body.score).toBe(100);
     expect(result.body.timeline.length).toBeGreaterThanOrEqual(4);

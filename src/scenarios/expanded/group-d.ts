@@ -20,7 +20,7 @@ export const groupDScenarios = [
       e(68, 'windows', 'dc-03', 'carlos.admin', '10.40.5.17', '4634', 'logout', 'success', 'Administrative RDP session ended within approved window', { duration_minutes: 21 }),
     ],
     pivot: { prompt: '¿Qué dato externo valida la actividad administrativa?', value: 'CHG-4821', evidenceTerms: ['CHG-4821', 'approved'] },
-    scope: { prompt: '¿Qué host fue modificado dentro de la ventana?', value: 'dc-03', evidenceTerms: ['dc-03', 'PATCH-OK'] },
+    scope: { prompt: '¿Qué parche firmado quedó instalado dentro de la ventana?', value: 'KB506821', aliases: ['Patch-KB506821.ps1'], evidenceTerms: ['KB506821', 'PATCH-OK'] },
     explanation: 'RDP y PowerShell son técnicas observables, pero PAM, smartcard, firma, ticket, origen y ventana convergen en un cambio legítimo. La alerta es un falso positivo correctamente investigado.',
     response: ['Validar CHG-4821 y mantener monitorización sin aislar dc-03', 'Documentar el falso positivo con origen y firma'],
     remediation: ['Afinar la detección con contexto PAM sin excluir controladores', 'Exigir que futuros scripts propaguen ticket y firma a la telemetría'],

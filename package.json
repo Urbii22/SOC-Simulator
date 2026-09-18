@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate": "tsx scripts/generate-datasets.ts",
+    "generate:coverage": "tsx scripts/generate-coverage.ts",
     "validate:scenarios": "tsx scripts/validate-scenarios.ts",
     "check": "npm run lint && npm run typecheck && npm run validate:scenarios && npm run test && npm run build"
   },
@@ -47,6 +48,7 @@
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.0.5",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "yaml": "^2.9.1"
   }
 }

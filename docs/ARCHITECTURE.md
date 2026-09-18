@@ -41,4 +41,12 @@ Estados, notas y progreso se guardan en `data/state.json`. Los datasets no se al
 
 ## Validación del catálogo
 
-`src/scenarios/validation.ts` verifica las 30 definiciones: determinismo, IDs, timestamps, timeline privada, IOC y respuestas demostrables, hosts y usuarios declarados, catálogo MITRE, campos KQL/SPL, estructura Sigma, tamaños y diversidad de fuentes. `npm run validate:scenarios` ejecuta esta puerta sin levantar la aplicación.
+El motor usa capas pequeñas en vez de una función monolítica:
+
+- `schema.ts`: contrato Zod estricto para definiciones y eventos;
+- `finalize.ts`: compatibilidad de las definiciones heredadas, metadata, fuentes y referencias de evidencia;
+- `validation.ts`: reglas semánticas, temporales, de contenido y calidad;
+- `cli.ts`: salida humana/JSON, filtros y códigos de proceso;
+- `coverage.ts`: matriz global derivada automáticamente.
+
+`npm run validate:scenarios` ejecuta la puerta sobre los 30 casos sin levantar la aplicación. La API mantiene una proyección pública separada y los tests inspeccionan recursivamente sus respuestas para evitar que claves, timelines privadas, IOC o consultas lleguen al cliente antes de resolver. Consulta [Motor de validación](VALIDATION.md) para reglas, severidades y extensión.

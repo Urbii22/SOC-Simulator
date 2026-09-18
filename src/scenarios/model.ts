@@ -1,7 +1,19 @@
 import type { Difficulty, EventSource, Ioc, InvestigationQuestion, MitreTechnique, SecurityEvent, Severity } from '../domain/types.js';
 
 export interface AttackEvent extends Omit<SecurityEvent, 'id' | 'scenarioId' | 'timestamp'> { offsetMinutes: number }
-export interface AnswerKey { value: string | boolean; aliases?: string[]; explanation: string; evidenceTerms?: string[] }
+export interface AnswerEvidence {
+  eventRefs: string[];
+  fields: string[];
+  iocValues?: string[];
+}
+export interface AnswerKey { value: string | boolean; aliases?: string[]; explanation: string; evidenceTerms?: string[]; evidence: AnswerEvidence }
+export interface ScenarioMetadata {
+  schemaVersion: 1;
+  deterministic: boolean;
+  defaultSeed: number;
+  baseTimestamp: string;
+  correlation: 'single-source' | 'multi-source' | 'multi-stage' | 'ambiguous';
+}
 
 export interface ScenarioDefinition {
   id: string;
@@ -17,6 +29,8 @@ export interface ScenarioDefinition {
   users: string[];
   hosts: string[];
   alerts: string[];
+  dataSources: EventSource[];
+  metadata: ScenarioMetadata;
   noiseCount?: number;
   noiseSources?: EventSource[];
   expectedVerdict: 'true-positive' | 'false-positive' | 'mixed';
@@ -31,3 +45,7 @@ export interface ScenarioDefinition {
   responseActions: string[];
   remediationActions: string[];
 }
+
+export type ScenarioDraft = Omit<ScenarioDefinition, 'answers' | 'dataSources' | 'metadata'> & {
+  answers: Record<string, Omit<AnswerKey, 'evidence'> & { evidence?: AnswerEvidence }>;
+};

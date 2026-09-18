@@ -1,5 +1,6 @@
-import type { AttackEvent, ScenarioDefinition } from './model.js';
+import type { AttackEvent, ScenarioDefinition, ScenarioDraft } from './model.js';
 import type { EventSource, MitreTechnique } from '../domain/types.js';
+import { finalizeScenario } from './finalize.js';
 import { groupAScenarios } from './expanded/group-a.js';
 import { groupBScenarios } from './expanded/group-b.js';
 import { groupCScenarios } from './expanded/group-c.js';
@@ -215,10 +216,12 @@ const specs: CaseSpec[] = [
   }
 ];
 
-function makeDefinition(spec: CaseSpec): ScenarioDefinition {
+function makeDefinition(spec: CaseSpec): ScenarioDraft {
+  const firstRelevant = [...spec.events].sort((left, right) => left.offsetMinutes - right.offsetMinutes)[0];
+  const lastRelevant = [...spec.events].sort((left, right) => right.offsetMinutes - left.offsetMinutes)[0];
   const questions: ScenarioDefinition['questions'] = [
-    { id: 'host', prompt: '¿Qué host está comprometido?', type: 'text', points: 20 },
-    { id: 'user', prompt: '¿Qué usuario está asociado a la actividad?', type: 'text', points: 15 },
+    { id: 'anchor', prompt: '¿Qué eventCode ancla el primer evento de la cadena relevante?', type: 'text', points: 20 },
+    { id: 'terminal', prompt: '¿Qué eventCode permite cerrar la timeline relevante?', type: 'text', points: 15 },
     { id: 'source', prompt: '¿Cuál es la IP de origen relevante?', type: 'text', points: 15 },
     { id: 'technique', prompt: '¿Qué técnica MITRE ATT&CK describe mejor el patrón?', type: 'single', options: [spec.technique.id, 'T1055', 'T1047', 'T1087'], points: 20 },
     { id: 'verdict', prompt: '¿Es un verdadero positivo?', type: 'boolean', points: 15 },
@@ -233,8 +236,8 @@ function makeDefinition(spec: CaseSpec): ScenarioDefinition {
     hosts: [...new Set([spec.host, 'dc-01', 'proxy-01', 'dns-01'])], alerts: spec.alerts,
     expectedVerdict: 'true-positive', attackEvents: spec.events, questions,
     answers: {
-      host: { value: spec.host, explanation: `Los eventos correlacionados convergen en ${spec.host}.` },
-      user: { value: spec.user, explanation: `${spec.user} aparece en la cadena de actividad relevante.` },
+      anchor: { value: firstRelevant.eventCode, explanation: `${firstRelevant.eventCode} identifica el primer evento de la cadena relevante.`, evidenceTerms: [firstRelevant.eventCode, firstRelevant.message] },
+      terminal: { value: lastRelevant.eventCode, explanation: `${lastRelevant.eventCode} identifica el último evento de la timeline relevante.`, evidenceTerms: [lastRelevant.eventCode, lastRelevant.message] },
       source: { value: spec.sourceIp, explanation: `${spec.sourceIp} es el origen que conecta los eventos.` },
       technique: { value: spec.technique.id, aliases: [spec.technique.name], explanation: `${spec.technique.id}: ${spec.technique.name}.` },
       verdict: { value: true, aliases: ['true', 'sí', 'si', 'verdadero positivo', 'true positive'], explanation: 'La telemetría de varias fuentes confirma actividad maliciosa.' },
@@ -251,5 +254,6 @@ function makeDefinition(spec: CaseSpec): ScenarioDefinition {
   };
 }
 
-export const scenarioDefinitions = [...specs.map(makeDefinition), ...groupAScenarios, ...groupBScenarios, ...groupCScenarios, ...groupDScenarios];
+const scenarioDrafts = [...specs.map(makeDefinition), ...groupAScenarios, ...groupBScenarios, ...groupCScenarios, ...groupDScenarios];
+export const scenarioDefinitions: ScenarioDefinition[] = scenarioDrafts.map(finalizeScenario);
 export const scenarioById = new Map(scenarioDefinitions.map((scenario) => [scenario.id, scenario]));

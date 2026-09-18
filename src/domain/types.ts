@@ -2,6 +2,7 @@ export type Severity = 'critical' | 'high' | 'medium' | 'low';
 export type IncidentStatus = 'New' | 'Investigating' | 'Escalated' | 'Closed - True Positive' | 'Closed - False Positive';
 export type Difficulty = 'Foundation' | 'Intermediate' | 'Advanced';
 export type EventSource = 'windows' | 'sysmon' | 'linux' | 'dns' | 'http' | 'auth' | 'network' | 'suricata' | 'firewall' | 'endpoint' | 'email' | 'cloud';
+export type MitreTactic = 'Reconnaissance' | 'Resource Development' | 'Initial Access' | 'Execution' | 'Persistence' | 'Privilege Escalation' | 'Defense Evasion' | 'Credential Access' | 'Discovery' | 'Lateral Movement' | 'Collection' | 'Command and Control' | 'Exfiltration' | 'Impact';
 
 export interface SecurityEvent {
   id: string;
@@ -28,8 +29,9 @@ export interface InvestigationQuestion {
   points: number;
 }
 
-export interface MitreTechnique { id: string; name: string; tactic: string }
-export interface Ioc { type: 'ip' | 'domain' | 'hash' | 'path' | 'user' | 'process'; value: string; context: string }
+export interface MitreTechnique { id: string; name: string; tactic: MitreTactic }
+export type IocType = 'ip' | 'domain' | 'url' | 'hash' | 'email' | 'hostname' | 'user' | 'filename' | 'path' | 'registry_key' | 'process' | 'other';
+export interface Ioc { type: IocType; value: string; context: string }
 
 export interface ScenarioSummary {
   id: string;
