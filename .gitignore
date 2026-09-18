@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+data/
+datasets/*.ndjson
+output/
+.playwright-cli/
+.env
+*.log
+.DS_Store

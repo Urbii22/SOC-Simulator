@@ -1,0 +1,8 @@
+node_modules
+dist
+datasets
+coverage
+.git
+data
+output
+*.log
