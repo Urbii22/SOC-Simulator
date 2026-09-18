@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CircleDot, Command, RadioTower, RefreshCw, Shield } from 'lucide-react';
-import type { GradeResult, IncidentStatus, ScenarioDetail, ScenarioSummary } from '../domain/types';
+import type { GradeResult, IncidentStatus, ProceduralTemplateSummary, ScenarioDetail, ScenarioSummary } from '../domain/types';
 import { api } from './api';
 import { AlertQueue } from './components/AlertQueue';
 import { IncidentWorkspace } from './components/IncidentWorkspace';
@@ -13,14 +13,19 @@ export function App() {
   const [severity, setSeverity] = useState('all');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [templates, setTemplates] = useState<ProceduralTemplateSummary[]>([]);
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
 
   const loadList = useCallback(async () => {
-    const items = await api.scenarios(); setScenarios(items); setError('');
+    const items = await api.scenarios();
+    setScenarios((current) => [...current.filter(({ origin }) => origin === 'procedural' || origin === 'random'), ...items]); setError('');
     setSelectedId((current) => current || items[0]?.id || '');
   }, []);
-  useEffect(() => { loadList().catch(() => setError('No se pudo conectar con la API del laboratorio.')).finally(() => setLoading(false)); }, [loadList]);
+  useEffect(() => {
+    void api.proceduralTemplates().then(setTemplates).catch(() => setTemplates([]));
+    loadList().catch(() => setError('No se pudo conectar con la API del laboratorio.')).finally(() => setLoading(false));
+  }, [loadList]);
   useEffect(() => {
     if (!selectedId) return;
     let active = true;
@@ -47,13 +52,20 @@ export function App() {
     } catch { setError('No se pudo guardar el estado del incidente.'); }
   };
   const submit = async (answers: Record<string, string | boolean>): Promise<GradeResult> => { const result = await api.submit(selectedId, answers); await loadList(); return result; };
+  const generate = async (input: { template?: string; random?: boolean; seed: number; difficulty: 'easy' | 'medium' | 'hard' }) => {
+    try {
+      const generated = await api.generateScenario(input);
+      setScenarios((current) => [generated.scenario, ...current.filter(({ id }) => id !== generated.scenario.id)]);
+      setSelectedId(generated.scenario.id); setError('');
+    } catch { setError('No se pudo generar una variante válida con esos parámetros.'); }
+  };
   const statusText = useMemo(() => `${scenarios.filter((item) => item.progress === 100).length}/${scenarios.length} casos completados`, [scenarios]);
 
   return (
     <div className="app-shell">
       <header className="topbar"><div className="brand-mark"><Shield size={20} aria-hidden="true" /><span>WATCHFLOOR</span><small>// 07</small></div><div className="topbar-center"><RadioTower size={15} /><span>Entorno local</span><span className="topbar-separator" /><CircleDot size={13} /><span>{scenarios.length} escenarios activos</span></div><div className="operator"><div><span>Turno de entrenamiento</span><strong>{statusText}</strong></div><kbd><Command size={11} /> K</kbd></div></header>
       {error && <div className="global-error" role="alert">{error}<button onClick={() => location.reload()}><RefreshCw size={14} />Reintentar</button></div>}
-      {loading ? <div className="loading-shell" aria-busy="true"><span /><p>Preparando el turno…</p></div> : <div className="operations-grid"><AlertQueue scenarios={scenarios} selectedId={selectedId} onSelect={setSelectedId} query={query} setQuery={setQuery} severity={severity} setSeverity={setSeverity} />{detail ? <IncidentWorkspace scenario={detail} onUpdate={update} onSubmit={submit} /> : <div className="empty-workspace">Selecciona una alerta para comenzar.</div>}</div>}
+      {loading ? <div className="loading-shell" aria-busy="true"><span /><p>Preparando el turno…</p></div> : <div className="operations-grid"><AlertQueue scenarios={scenarios} selectedId={selectedId} onSelect={setSelectedId} query={query} setQuery={setQuery} severity={severity} setSeverity={setSeverity} templates={templates} onGenerate={generate} />{detail ? <IncidentWorkspace scenario={detail} onUpdate={update} onSubmit={submit} /> : <div className="empty-workspace">Selecciona una alerta para comenzar.</div>}</div>}
     </div>
   );
 }

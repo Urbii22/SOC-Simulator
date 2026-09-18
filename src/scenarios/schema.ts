@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const nonEmpty = z.string().trim().min(1);
 const identifier = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-const eventSourceSchema = z.enum(['windows', 'sysmon', 'linux', 'dns', 'http', 'auth', 'network', 'suricata', 'firewall', 'endpoint', 'email', 'cloud']);
+export const eventSourceSchema = z.enum(['windows', 'sysmon', 'linux', 'dns', 'http', 'auth', 'network', 'suricata', 'firewall', 'endpoint', 'email', 'cloud']);
 const detailValueSchema = z.union([z.string(), z.number().finite(), z.boolean()]);
 const mitreTacticSchema = z.enum(['Reconnaissance', 'Resource Development', 'Initial Access', 'Execution', 'Persistence', 'Privilege Escalation', 'Defense Evasion', 'Credential Access', 'Discovery', 'Lateral Movement', 'Collection', 'Command and Control', 'Exfiltration', 'Impact']);
 
@@ -27,7 +27,7 @@ export const securityEventSchema = attackEventSchema.omit({ offsetMinutes: true 
   timestamp: z.string().datetime({ offset: true }),
 }).strict();
 
-const questionSchema = z.object({
+export const questionSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_-]*$/),
   prompt: z.string().trim().min(10),
   type: z.enum(['text', 'single', 'boolean']),
@@ -38,13 +38,13 @@ const questionSchema = z.object({
   if (question.type !== 'single' && question.options) context.addIssue({ code: z.ZodIssueCode.custom, path: ['options'], message: 'options are only valid for single-choice questions' });
 });
 
-const evidenceSchema = z.object({
+export const evidenceSchema = z.object({
   eventRefs: z.array(nonEmpty).min(1),
   fields: z.array(nonEmpty).min(1),
   iocValues: z.array(nonEmpty).min(1).optional(),
 }).strict();
 
-const answerSchema = z.object({
+export const answerSchema = z.object({
   value: z.union([nonEmpty, z.boolean()]),
   aliases: z.array(nonEmpty).min(1).optional(),
   explanation: z.string().trim().min(10),
@@ -52,19 +52,19 @@ const answerSchema = z.object({
   evidence: evidenceSchema,
 }).strict();
 
-const iocSchema = z.object({
+export const iocSchema = z.object({
   type: z.enum(['ip', 'domain', 'url', 'hash', 'email', 'hostname', 'user', 'filename', 'path', 'registry_key', 'process', 'other']),
   value: nonEmpty,
   context: z.string().trim().min(8),
 }).strict();
 
-const mitreSchema = z.object({
+export const mitreSchema = z.object({
   id: z.string().regex(/^T\d{4}(?:\.\d{3})?$/),
   name: nonEmpty,
   tactic: mitreTacticSchema,
 }).strict();
 
-const metadataSchema = z.object({
+export const metadataSchema = z.object({
   schemaVersion: z.literal(1),
   deterministic: z.literal(true),
   defaultSeed: z.number().int().nonnegative(),

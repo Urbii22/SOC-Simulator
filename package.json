@@ -14,9 +14,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate": "tsx scripts/generate-datasets.ts",
+    "generate:scenario": "tsx scripts/generate-scenario.ts",
     "generate:coverage": "tsx scripts/generate-coverage.ts",
     "validate:scenarios": "tsx scripts/validate-scenarios.ts",
-    "check": "npm run lint && npm run validate:scenarios -- --strict && npm run test && npm run build"
+    "validate:procedural": "tsx scripts/dogfood-procedural.ts",
+    "check": "npm run lint && npm run validate:scenarios -- --strict && npm run validate:procedural && npm run test && npm run build"
   },
   "dependencies": {
     "@elastic/elasticsearch": "8.17.1",

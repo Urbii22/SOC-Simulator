@@ -6,6 +6,8 @@ La aplicación usa un monolito modular TypeScript para reducir fricción local: 
 
 El generador mezcla una cantidad configurable de eventos benignos con la timeline relevante de cada escenario. Una PRNG con semilla fija mantiene IDs, orden y timestamps reproducibles. Los diez casos originales conservan su generación histórica; los nuevos seleccionan fuentes y volumen de ruido según dificultad. Cada evento conserva campos normalizados (`host`, `user`, `sourceIp`, `destinationIp`, `eventCode`, `action`, `outcome`) y detalles específicos de la fuente.
 
+La capa procedural no modifica el catálogo canónico. Una plantilla validada selecciona un escenario estable como blueprint y declara fases, dependencias, actores, infraestructura, variables, perfil de ruido, verdad y contrato de investigación. El motor aplica una transformación única sobre toda la definición privada —incluidas respuestas, evidencias, IOC, KQL/SPL/Sigma— y sólo publica la variante después de ejecutar el mismo `scenarioSchema` y todas las reglas semánticas.
+
 ```mermaid
 sequenceDiagram
   participant A as Analista
@@ -28,6 +30,7 @@ sequenceDiagram
 
 - `domain`: tipos estables del contrato.
 - `scenarios`: catálogo, claves, consultas y generación.
+- `procedural`: schemas de plantilla/input, PRNG, pools sintéticos, catálogo procedural y motor de variantes.
 - `server`: transporte HTTP, validación, estado e ingestión.
 - `client`: presentación y estado de interfaz.
 
@@ -38,6 +41,8 @@ Estados, notas y progreso se guardan en `data/state.json`, dentro de un document
 La aplicación está diseñada para una sola instancia local. Las actualizaciones son síncronas dentro del proceso y, ante dos cambios válidos simultáneos sobre las mismas notas, prevalece el último. No existe coordinación entre varios procesos que compartan el mismo fichero. Los estados son etiquetas de flujo para el ejercicio, no una máquina de estados normativa: el analista puede reclasificar o reabrir un caso sin una secuencia obligatoria.
 
 Los datasets no se almacenan porque son deterministas. Docker utiliza un volumen para el estado y otro para Elasticsearch.
+
+Las variantes tampoco requieren persistencia: `proc-<template>-s<seed>-<difficulty>` y `proc-random-s<seed>-<difficulty>` contienen lo necesario para regenerarlas. La API conserva como optimización una LRU de 32 variantes por proceso. Se invalida al reiniciar o desplegar código nuevo; no interviene en la identidad ni en la corrección.
 
 ## Elasticsearch
 

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { scenarioDefinitions } from '../src/scenarios/definitions.js';
 import { generateScenarioEvents, getAttackEvents } from '../src/scenarios/generator.js';
 
@@ -18,6 +20,13 @@ describe('scenario generator', () => {
       'phishing-credential-cloud-abuse', 'ambiguous-admin-activity',
       'possible-data-exfiltration', 'mixed-alert-incident',
     ]));
+  });
+
+  it('keeps every canonical dataset byte-for-byte stable', () => {
+    for (const scenario of scenarioDefinitions) {
+      const committed = fs.readFileSync(path.join('datasets', `${scenario.id}.ndjson`), 'utf8').split(/\r?\n/).filter(Boolean);
+      expect(generateScenarioEvents(scenario).map((event) => JSON.stringify(event)), scenario.id).toEqual(committed);
+    }
   });
 
   it.each(scenarioDefinitions.map((item) => [item.id, item] as const))('%s is deterministic and contains correlated noise', (_id, scenario) => {

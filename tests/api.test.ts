@@ -3,6 +3,7 @@ import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/server/app.js';
 import { scenarioDefinitions } from '../src/scenarios/definitions.js';
+import { generateProceduralScenario } from '../src/procedural/engine.js';
 
 const app = createApp();
 
@@ -137,5 +138,44 @@ describe('training API', () => {
     expect(local.headers['access-control-allow-origin']).toBe('http://localhost:5173');
     const remote = await request(app).get('/api/health').set('Origin', 'https://untrusted.example').expect(200);
     expect(remote.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('lists procedural templates and generates a reproducible student-safe variant', async () => {
+    const templates = await request(app).get('/api/procedural/templates').expect(200);
+    expect(templates.body).toHaveLength(9);
+    expect(templates.body[0]).not.toHaveProperty('investigation');
+    const generated = await request(app).post('/api/procedural/generate').send({ template: 'password-spray', seed: 92817, difficulty: 'medium' }).expect(201);
+    expect(generated.body).toMatchObject({ variantId: 'password-spray:92817:medium', scenario: { origin: 'procedural', variantId: 'password-spray:92817:medium' } });
+    expect(generated.body.scenario).not.toHaveProperty('answers');
+    expect(generated.body.scenario.mitre).toEqual([]);
+    expect(generated.body.scenario.visibleIocs).toEqual([]);
+    const regenerated = await request(app).get(`/api/scenarios/${generated.body.scenario.id}`).expect(200);
+    expect(regenerated.body.events).toEqual(generated.body.scenario.events);
+  });
+
+  it('keeps random-mode provenance and private truth out of pre-submission responses', async () => {
+    const result = await request(app).post('/api/procedural/generate').send({ random: true, seed: 82913, difficulty: 'hard' }).expect(201);
+    expect(result.body.variantId).toBe('random:82913:hard');
+    expect(result.body).not.toHaveProperty('templateId');
+    expect(result.body.scenario).toMatchObject({ title: expect.stringContaining('Investigación sin clasificar'), category: 'Triage no clasificado', origin: 'random' });
+    expect(result.body.scenario).not.toHaveProperty('expectedVerdict');
+    expect(result.body.scenario).not.toHaveProperty('answers');
+    expect(result.body.scenario.id).not.toContain('password-spray');
+  });
+
+  it('grades a regenerated procedural scenario with recalculated answers and evidence', async () => {
+    const variant = generateProceduralScenario({ template: 'dns-beaconing', seed: 12345, difficulty: 'hard' });
+    const answers = Object.fromEntries(variant.scenario.questions.map(({ id }) => [id, variant.scenario.answers[id].value]));
+    const result = await request(app).post(`/api/scenarios/${variant.scenarioId}/submit`).send({ answers }).expect(200);
+    expect(result.body.score).toBe(100);
+    expect(result.body.timeline).toHaveLength(variant.scenario.attackEvents.length);
+    expect(result.body.iocs).toEqual(variant.scenario.iocs);
+  });
+
+  it('rejects malformed procedural requests and unknown templates', async () => {
+    await request(app).post('/api/procedural/generate').send({ seed: 1 }).expect(400);
+    await request(app).post('/api/procedural/generate').send({ template: 'password-spray', random: true, seed: 1 }).expect(400);
+    await request(app).post('/api/procedural/generate').send({ template: 'password-spray', seed: 4_294_967_296 }).expect(400);
+    await request(app).post('/api/procedural/generate').send({ template: 'not-real', seed: 1 }).expect(422);
   });
 });

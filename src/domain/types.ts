@@ -47,6 +47,8 @@ export interface ScenarioSummary {
   eventCount: number;
   description: string;
   progress: number;
+  origin?: 'canonical' | 'procedural' | 'random';
+  variantId?: string;
 }
 
 export interface ScenarioDetail extends ScenarioSummary {
@@ -75,4 +77,19 @@ export interface GradeResult {
   queries: { kql: string[]; spl: string[]; sigma?: string };
   responseActions: string[];
   remediationActions: string[];
+}
+
+export interface ProceduralTemplateSummary {
+  id: string;
+  name: string;
+  category: string;
+  defaultDifficulty: 'easy' | 'medium' | 'hard';
+  supportedDifficulties: Array<'easy' | 'medium' | 'hard'>;
+  phaseCount: number;
+}
+
+export interface GeneratedVariantResponse {
+  variantId: string;
+  hash: string;
+  scenario: ScenarioDetail;
 }

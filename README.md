@@ -8,6 +8,7 @@ Laboratorio local, seguro y reproducible para practicar triage, investigación y
 
 - 30 escenarios progresivos: fundamentos, correlación multifuente, cadenas multi-stage y triage ambiguo.
 - 2.951 eventos reproducibles con ruido benigno y 12 fuentes: Windows, Sysmon, Linux, DNS, HTTP, autenticación, red, Suricata, firewall, endpoint, correo y cloud.
+- 9 plantillas procedimentales con seeds compartibles, dificultad `easy`/`medium`/`hard` y modo aleatorio sin spoilers.
 - Flujo de analista: cola, severidad, estados, evidencias, notas, preguntas y resolución explicada.
 - Referencias KQL, SPL y Sigma por escenario.
 - API validada, persistencia local y exportación NDJSON.
@@ -31,6 +32,16 @@ Para construir y ejecutar como producción:
 npm run build
 npm start
 ```
+
+Genera una variante reproducible o lista las plantillas disponibles:
+
+```bash
+npm run generate:scenario -- --template password-spray --seed 92817
+npm run generate:scenario -- --random --seed 82913 --difficulty hard
+npm run generate:scenario -- --list
+```
+
+La identidad `password-spray:92817:easy` regenera exactamente la misma definición, eventos y hash. Los parámetros API opcionales también quedan codificados, por ejemplo `password-spray:77:medium:noise=88:scale=1.375`. Sin `--output` el CLI escribe el artefacto explícito en `output/procedural/`; la aplicación y la API regeneran por identidad y no dependen de ese fichero.
 
 Abre [http://localhost:3001](http://localhost:3001).
 
@@ -68,8 +79,10 @@ Kibana queda en [http://localhost:5601](http://localhost:5601). Importa `infra/k
 |---|---|
 | `npm run dev` | API y web con recarga |
 | `npm run generate` | Genera un NDJSON por escenario en `datasets/` |
+| `npm run generate:scenario -- --template <id> --seed <n>` | Genera una variante procedural validada |
 | `npm run generate:coverage` | Regenera la matriz de cobertura desde el catálogo |
 | `npm run validate:scenarios` | Valida schema, determinismo, evidencias, IOC, MITRE, consultas, Sigma y spoilers |
+| `npm run validate:procedural` | Dogfooding de 324 variantes, hashes, scoring, diversidad y rendimiento |
 | `npm test` | Ejecuta la suite de pruebas |
 | `npm run typecheck` | TypeScript estricto en cliente y servidor |
 | `npm run lint` | ESLint |
@@ -84,6 +97,9 @@ flowchart LR
   UI --> API[API Express]
   API --> Engine[Motor de escenarios]
   Engine --> Definitions[Definiciones privadas]
+  Engine --> Templates[Plantillas procedimentales]
+  Templates --> RNG[PRNG por seed]
+  RNG --> Validator[Validador completo]
   Engine --> Events[Eventos reproducibles]
   API --> State[(Estado y notas)]
   API -->|bulk opcional| ES[(Elasticsearch)]
@@ -110,6 +126,8 @@ docs/             guías de estudiante, instructor y extensión
 
 - `GET /api/health`
 - `GET /api/scenarios`
+- `GET /api/procedural/templates`
+- `POST /api/procedural/generate`
 - `GET /api/scenarios/:id`
 - `GET /api/scenarios/:id/events?q=...`
 - `PATCH /api/scenarios/:id`
@@ -125,6 +143,7 @@ Los cuerpos de escritura se validan con Zod y tienen límites de tamaño. La API
 - [Guía del estudiante](docs/STUDENT_GUIDE.md)
 - [Guía del instructor](docs/INSTRUCTOR_GUIDE.md)
 - [Crear escenarios](docs/CREATING_SCENARIOS.md)
+- [Generación procedural](docs/PROCEDURAL_SCENARIOS.md)
 - [Motor de validación](docs/VALIDATION.md)
 - [Catálogo de escenarios](docs/SCENARIOS.md)
 - [Matriz de cobertura](docs/COVERAGE_MATRIX.md)

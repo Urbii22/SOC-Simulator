@@ -26,17 +26,21 @@ const benignTemplates: Array<{ source: EventSource; code: string; action: string
   { source: 'dns', code: 'DNS-Q', action: 'dns_query', message: 'Query A time.windows.example', details: { qtype: 'A' } },
 ];
 
+const proceduralSuricataTemplate = { source: 'suricata' as const, code: 'ET-INFO', action: 'network_observation', message: 'Routine TLS flow matched an informational policy signature', details: { destination_port: 443, signature_severity: 3 } };
+
 export function generateScenarioEvents(definition: ScenarioDefinition, seed = definition.metadata.defaultSeed): SecurityEvent[] {
   const random = seeded(seed + definition.id.length * 97);
+  const procedural = definition.id.startsWith('proc-');
   const base = new Date(definition.metadata.baseTimestamp);
+  const availableTemplates = procedural ? [...benignTemplates, proceduralSuricataTemplate] : benignTemplates;
   const selectedTemplates = definition.noiseSources?.length
-    ? benignTemplates.filter((template) => definition.noiseSources!.includes(template.source))
-    : benignTemplates.slice(0, 6);
-  const templates = selectedTemplates.length ? selectedTemplates : benignTemplates;
+    ? availableTemplates.filter((template) => definition.noiseSources!.includes(template.source))
+    : availableTemplates.slice(0, 6);
+  const templates = selectedTemplates.length ? selectedTemplates : availableTemplates;
   const noise: SecurityEvent[] = Array.from({ length: definition.noiseCount ?? 42 }, (_, index) => {
-    const template = templates[Math.floor(random() * templates.length)];
-    const host = definition.hosts[Math.floor(random() * definition.hosts.length)];
-    const user = definition.users[Math.floor(random() * definition.users.length)];
+    const template = procedural && index < templates.length ? templates[index] : templates[Math.floor(random() * templates.length)];
+    const host = procedural && index < definition.hosts.length ? definition.hosts[index] : definition.hosts[Math.floor(random() * definition.hosts.length)];
+    const user = procedural && index < definition.users.length ? definition.users[index] : definition.users[Math.floor(random() * definition.users.length)];
     const timestamp = new Date(base.getTime() + (index * 1.35 + random()) * 60_000).toISOString();
     return {
       id: `${definition.id}-n-${index}`, scenarioId: definition.id, timestamp,
@@ -50,7 +54,7 @@ export function generateScenarioEvents(definition: ScenarioDefinition, seed = de
     return { ...rest, tags: ['telemetry', rest.source], id: `${definition.id}-x-${index}`, scenarioId: definition.id, timestamp: new Date(base.getTime() + offsetMinutes * 60_000).toISOString() };
   });
   return [...noise, ...attacks]
-    .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+    .sort((a, b) => a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0)
     .map((item, index) => ({ ...item, id: `${definition.id}-evt-${String(index + 1).padStart(3, '0')}` }));
 }
 

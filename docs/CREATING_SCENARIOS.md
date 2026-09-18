@@ -26,3 +26,5 @@ npm run check
 ```
 
 Antes de aceptar el caso, añade un test negativo para cualquier regla nueva y comprueba que la respuesta no se deduce del briefing o de una sola cadena. Los tests parametrizados cubren automáticamente cada definición y la matriz se deriva del catálogo; no se edita a mano. Las reglas y severidades están documentadas en [Motor de validación](VALIDATION.md).
+
+Para convertir un patrón ya revisado en una familia de variantes, no copies el generador. Añade un `TemplateSpec` en `src/procedural/templates.ts`, divide todos los índices de `attackEvents` en fases no solapadas y deja que el builder incorpore preguntas, respuestas, IOC y consultas del blueprint. El procedimiento completo está en [Generación procedural](PROCEDURAL_SCENARIOS.md).
