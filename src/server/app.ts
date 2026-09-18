@@ -14,6 +14,9 @@ import { generateProceduralScenario, ProceduralGenerationError, regenerateProced
 import { proceduralRequestSchema } from '../procedural/schema.js';
 import { listProceduralTemplates, proceduralTemplates } from '../procedural/templates.js';
 import type { ScenarioDefinition } from '../scenarios/model.js';
+import { ChallengeSessionError, ChallengeSessionService } from './session-service.js';
+import { createSessionSchema, incidentIdSchema, progressSchema, repeatSchema, revisionSchema, sessionIdSchema, submissionSchema } from './session-model.js';
+import { SessionConflictError, SessionNotFoundError, SessionStore } from './session-store.js';
 
 const statuses = ['New', 'Investigating', 'Escalated', 'Closed - True Positive', 'Closed - False Positive'] as const;
 const updateSchema = z.object({ status: z.enum(statuses).optional(), notes: z.string().max(10_000).optional() }).strict()
@@ -59,9 +62,10 @@ function filterEvents(events: SecurityEvent[], query: string): SecurityEvent[] {
   }));
 }
 
-export function createApp(options: { stateFile?: string } = {}) {
+export function createApp(options: { stateFile?: string; sessionStateFile?: string; now?: () => number } = {}) {
   const app = express();
   const store = new LabStore(options.stateFile);
+  const sessionService = new ChallengeSessionService(new SessionStore(options.sessionStateFile), options.now);
   const proceduralCache = new Map<string, GeneratedProceduralScenario>();
   const cacheGenerated = (generated: GeneratedProceduralScenario) => {
     proceduralCache.delete(generated.scenarioId);
@@ -131,6 +135,53 @@ export function createApp(options: { stateFile?: string } = {}) {
       throw error;
     }
   });
+  app.post('/api/sessions', (request, response, next) => {
+    const parsed = createSessionSchema.safeParse(request.body);
+    if (!parsed.success) return response.status(400).json({ error: 'Invalid challenge session request', details: parsed.error.flatten() });
+    try { response.status(201).json(sessionService.create(parsed.data)); } catch (error) { next(error); }
+  });
+  app.get('/api/sessions/history', (_request, response) => response.json(sessionService.history()));
+  app.get('/api/sessions/stats', (_request, response) => response.json(sessionService.stats()));
+  app.get('/api/sessions/:sessionId', (request, response, next) => {
+    const id = sessionIdSchema.safeParse(request.params.sessionId);
+    if (!id.success) return response.status(400).json({ error: 'Invalid challenge session id' });
+    try { response.json(sessionService.get(id.data)); } catch (error) { next(error); }
+  });
+  app.get('/api/sessions/:sessionId/incidents/:incidentId', (request, response, next) => {
+    const sessionId = sessionIdSchema.safeParse(request.params.sessionId); const incidentId = incidentIdSchema.safeParse(request.params.incidentId);
+    if (!sessionId.success || !incidentId.success) return response.status(400).json({ error: 'Invalid challenge incident path' });
+    try { response.json(sessionService.getIncident(sessionId.data, incidentId.data)); } catch (error) { next(error); }
+  });
+  app.post('/api/sessions/:sessionId/incidents/:incidentId/start', (request, response, next) => {
+    const sessionId = sessionIdSchema.safeParse(request.params.sessionId); const incidentId = incidentIdSchema.safeParse(request.params.incidentId); const body = revisionSchema.safeParse(request.body);
+    if (!sessionId.success || !incidentId.success || !body.success) return response.status(400).json({ error: 'Invalid start request' });
+    try { response.json(sessionService.start(sessionId.data, incidentId.data, body.data.revision)); } catch (error) { next(error); }
+  });
+  app.patch('/api/sessions/:sessionId/incidents/:incidentId', (request, response, next) => {
+    const sessionId = sessionIdSchema.safeParse(request.params.sessionId); const incidentId = incidentIdSchema.safeParse(request.params.incidentId); const body = progressSchema.safeParse(request.body);
+    if (!sessionId.success || !incidentId.success || !body.success) return response.status(400).json({ error: 'Invalid progress update', ...(body.success ? {} : { details: body.error.flatten() }) });
+    try { response.json(sessionService.save(sessionId.data, incidentId.data, body.data)); } catch (error) { next(error); }
+  });
+  app.post('/api/sessions/:sessionId/incidents/:incidentId/hints', (request, response, next) => {
+    const sessionId = sessionIdSchema.safeParse(request.params.sessionId); const incidentId = incidentIdSchema.safeParse(request.params.incidentId); const body = revisionSchema.safeParse(request.body);
+    if (!sessionId.success || !incidentId.success || !body.success) return response.status(400).json({ error: 'Invalid hint request' });
+    try { response.json(sessionService.hint(sessionId.data, incidentId.data, body.data.revision)); } catch (error) { next(error); }
+  });
+  app.post('/api/sessions/:sessionId/incidents/:incidentId/submit', (request, response, next) => {
+    const sessionId = sessionIdSchema.safeParse(request.params.sessionId); const incidentId = incidentIdSchema.safeParse(request.params.incidentId); const body = submissionSchema.safeParse(request.body);
+    if (!sessionId.success || !incidentId.success || !body.success) return response.status(400).json({ error: 'Invalid challenge submission', ...(body.success ? {} : { details: body.error.flatten() }) });
+    try { response.json(sessionService.submit(sessionId.data, incidentId.data, body.data.revision, body.data.answers)); } catch (error) { next(error); }
+  });
+  app.post('/api/sessions/:sessionId/finalize', (request, response, next) => {
+    const sessionId = sessionIdSchema.safeParse(request.params.sessionId); const body = revisionSchema.safeParse(request.body);
+    if (!sessionId.success || !body.success) return response.status(400).json({ error: 'Invalid finalize request' });
+    try { response.json(sessionService.finalize(sessionId.data, body.data.revision)); } catch (error) { next(error); }
+  });
+  app.post('/api/sessions/:sessionId/repeat', (request, response, next) => {
+    const sessionId = sessionIdSchema.safeParse(request.params.sessionId); const body = repeatSchema.safeParse(request.body);
+    if (!sessionId.success || !body.success) return response.status(400).json({ error: 'Invalid repeat request' });
+    try { response.status(201).json(sessionService.repeat(sessionId.data, body.data.strategy)); } catch (error) { next(error); }
+  });
   app.get('/api/scenarios/:id', (request, response) => {
     const resolved = resolveScenario(request.params.id);
     if (!resolved) return response.status(404).json({ error: 'Scenario not found' });
@@ -196,6 +247,9 @@ export function createApp(options: { stateFile?: string } = {}) {
     void next;
     if (error.status === 400 && error.type === 'entity.parse.failed') return response.status(400).json({ error: 'Invalid JSON body' });
     if (error.status === 413 || error.type === 'entity.too.large') return response.status(413).json({ error: 'Request body too large' });
+    if (error instanceof SessionNotFoundError) return response.status(404).json({ error: error.message });
+    if (error instanceof SessionConflictError) return response.status(409).json({ error: error.message });
+    if (error instanceof ChallengeSessionError) return response.status(error.status).json({ error: error.message });
     console.error(error.message);
     response.status(500).json({ error: 'Unexpected server error' });
   });

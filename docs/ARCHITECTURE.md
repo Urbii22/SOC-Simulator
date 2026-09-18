@@ -44,6 +44,8 @@ Los datasets no se almacenan porque son deterministas. Docker utiliza un volumen
 
 Las variantes tampoco requieren persistencia: `proc-<template>-s<seed>-<difficulty>` y `proc-random-s<seed>-<difficulty>` contienen lo necesario para regenerarlas. La API conserva como optimización una LRU de 32 variantes por proceso. Se invalida al reiniciar o desplegar código nuevo; no interviene en la identidad ni en la corrección.
 
+Challenge Mode sí persiste el plan y cada intento en `data/sessions.json`. El plan privado contiene únicamente la referencia canónica o plantilla/seed procedural necesaria para regenerar el dataset; no duplica eventos. El contrato público reemplaza esas identidades por `incident-XX`, bloquea categoría/verdad/IOC/MITRE hasta la entrega y conserva sólo las respuestas parciales del propio analista. Cada cambio incluye una revisión optimista, por lo que una actualización obsoleta recibe conflicto en lugar de sobrescribir progreso reciente. Consulta [Challenge Mode](CHALLENGE_MODE.md).
+
 ## Elasticsearch
 
 `POST /api/elastic/sync` crea `soc-training-events`, aplica mappings de fecha, keyword e IP y realiza un bulk idempotente usando el ID del evento. Sólo se permite una sincronización simultánea por proceso y el cliente se cierra al terminar. Kibana trabaja sobre ese índice.

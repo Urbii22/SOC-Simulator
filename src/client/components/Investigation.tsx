@@ -1,15 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, CircleAlert, Send, ShieldCheck, X } from 'lucide-react';
 import type { GradeResult, InvestigationQuestion } from '../../domain/types';
 
-interface Props { questions: InvestigationQuestion[]; onSubmit: (answers: Record<string, string | boolean>) => Promise<GradeResult> }
+interface Props {
+  questions: InvestigationQuestion[];
+  onSubmit: (answers: Record<string, string | boolean>) => Promise<GradeResult>;
+  initialAnswers?: Record<string, string | boolean>;
+  onAnswersChange?: (answers: Record<string, string | boolean>) => void;
+}
 
-export function Investigation({ questions, onSubmit }: Props) {
-  const [answers, setAnswers] = useState<Record<string, string | boolean>>({});
+const emptyAnswers: Record<string, string | boolean> = {};
+
+export function Investigation({ questions, onSubmit, initialAnswers = emptyAnswers, onAnswersChange }: Props) {
+  const [answers, setAnswers] = useState<Record<string, string | boolean>>(initialAnswers);
   const [result, setResult] = useState<GradeResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const answer = (id: string, value: string | boolean) => setAnswers((current) => ({ ...current, [id]: value }));
+  useEffect(() => { setAnswers(initialAnswers); setResult(null); }, [questions, initialAnswers]);
+  const answer = (id: string, value: string | boolean) => setAnswers((current) => { const next = { ...current, [id]: value }; onAnswersChange?.(next); return next; });
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setError('');
     try { setResult(await onSubmit(answers)); } catch { setError('No se pudo evaluar el ejercicio. Comprueba que la API está disponible.'); } finally { setBusy(false); }
@@ -33,7 +41,7 @@ export function Investigation({ questions, onSubmit }: Props) {
   );
 }
 
-function Resolution({ result }: { result: GradeResult }) {
+export function Resolution({ result }: { result: GradeResult }) {
   return (
     <section className="resolution" aria-labelledby="score-title">
       <div className="score-panel"><div className="score-ring" style={{ '--score': `${result.score * 3.6}deg` } as React.CSSProperties}><span><strong>{result.score}</strong><small>/ 100</small></span></div><div><span className="eyebrow">Investigación evaluada</span><h3 id="score-title">{result.score >= 80 ? 'Caso resuelto' : 'Revisa la cadena de evidencias'}</h3><p>{result.explanation}</p></div></div>

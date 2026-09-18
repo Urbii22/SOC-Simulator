@@ -4,7 +4,8 @@ import { createApp } from './app.js';
 const port = Number(process.env.PORT ?? 3001);
 if (!Number.isInteger(port) || port < 1 || port > 65_535) throw new Error('PORT must be an integer between 1 and 65535');
 const stateFile = process.env.STATE_FILE ?? path.resolve('data/state.json');
-const server = createApp({ stateFile }).listen(port, () => {
+const sessionStateFile = process.env.SESSION_STATE_FILE ?? path.resolve('data/sessions.json');
+const server = createApp({ stateFile, sessionStateFile }).listen(port, () => {
   console.log(`SOC Training Lab API listening on http://localhost:${port}`);
 });
 

@@ -18,7 +18,8 @@
     "generate:coverage": "tsx scripts/generate-coverage.ts",
     "validate:scenarios": "tsx scripts/validate-scenarios.ts",
     "validate:procedural": "tsx scripts/dogfood-procedural.ts",
-    "check": "npm run lint && npm run validate:scenarios -- --strict && npm run validate:procedural && npm run test && npm run build"
+    "validate:challenge": "tsx scripts/dogfood-challenge.ts",
+    "check": "npm run lint && npm run validate:scenarios -- --strict && npm run validate:procedural && npm run validate:challenge && npm run test && npm run build"
   },
   "dependencies": {
     "@elastic/elasticsearch": "8.17.1",

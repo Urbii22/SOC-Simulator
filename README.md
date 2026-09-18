@@ -9,6 +9,7 @@ Laboratorio local, seguro y reproducible para practicar triage, investigación y
 - 30 escenarios progresivos: fundamentos, correlación multifuente, cadenas multi-stage y triage ambiguo.
 - 2.951 eventos reproducibles con ruido benigno y 12 fuentes: Windows, Sysmon, Linux, DNS, HTTP, autenticación, red, Suricata, firewall, endpoint, correo y cloud.
 - 9 plantillas procedimentales con seeds compartibles, dificultad `easy`/`medium`/`hard` y modo aleatorio sin spoilers.
+- Challenge Mode persistente: Quick (1), Training (3), SOC Shift (5) y sesiones Custom reproducibles por seed.
 - Flujo de analista: cola, severidad, estados, evidencias, notas, preguntas y resolución explicada.
 - Referencias KQL, SPL y Sigma por escenario.
 - API validada, persistencia local y exportación NDJSON.
@@ -83,6 +84,7 @@ Kibana queda en [http://localhost:5601](http://localhost:5601). Importa `infra/k
 | `npm run generate:coverage` | Regenera la matriz de cobertura desde el catálogo |
 | `npm run validate:scenarios` | Valida schema, determinismo, evidencias, IOC, MITRE, consultas, Sigma y spoilers |
 | `npm run validate:procedural` | Dogfooding de 324 variantes, hashes, scoring, diversidad y rendimiento |
+| `npm run validate:challenge` | Dogfooding de sesiones, recuperación, pistas, respuestas y rendimiento |
 | `npm test` | Ejecuta la suite de pruebas |
 | `npm run typecheck` | TypeScript estricto en cliente y servidor |
 | `npm run lint` | ESLint |
@@ -102,6 +104,7 @@ flowchart LR
   RNG --> Validator[Validador completo]
   Engine --> Events[Eventos reproducibles]
   API --> State[(Estado y notas)]
+  API --> Sessions[(Sesiones y métricas)]
   API -->|bulk opcional| ES[(Elasticsearch)]
   ES --> Kibana[Kibana]
   Events --> NDJSON[Export NDJSON]
@@ -134,6 +137,13 @@ docs/             guías de estudiante, instructor y extensión
 - `POST /api/scenarios/:id/submit`
 - `GET /api/scenarios/:id/export`
 - `POST /api/elastic/sync`
+- `POST /api/sessions`
+- `GET /api/sessions/:id`
+- `GET /api/sessions/:id/incidents/:incidentId`
+- `PATCH /api/sessions/:id/incidents/:incidentId`
+- `POST /api/sessions/:id/incidents/:incidentId/submit`
+- `GET /api/sessions/history`
+- `GET /api/sessions/stats`
 
 Los cuerpos de escritura se validan con Zod y tienen límites de tamaño. La API desactiva la cabecera de tecnología y no expone respuestas antes de evaluar.
 
@@ -144,6 +154,7 @@ Los cuerpos de escritura se validan con Zod y tienen límites de tamaño. La API
 - [Guía del instructor](docs/INSTRUCTOR_GUIDE.md)
 - [Crear escenarios](docs/CREATING_SCENARIOS.md)
 - [Generación procedural](docs/PROCEDURAL_SCENARIOS.md)
+- [Challenge Mode](docs/CHALLENGE_MODE.md)
 - [Motor de validación](docs/VALIDATION.md)
 - [Catálogo de escenarios](docs/SCENARIOS.md)
 - [Matriz de cobertura](docs/COVERAGE_MATRIX.md)
