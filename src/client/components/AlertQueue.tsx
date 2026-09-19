@@ -23,11 +23,11 @@ export function AlertQueue({ scenarios, selectedId, onSelect, query, setQuery, s
   return (
     <aside className="queue-panel" aria-label="Cola de alertas">
       <div className="queue-heading">
-        <div><span className="eyebrow">Turno activo</span><h2>Cola de alertas</h2></div>
+        <div><span className="eyebrow queue-live"><span className="live-pulse" />Centro de operaciones</span><h2>Cola de alertas</h2></div>
         <span className="count-badge" aria-label={`${filtered.length} alertas`}>{filtered.length}</span>
       </div>
       <div className="filter-stack">
-        {templates.length > 0 && onGenerate && <ProceduralLauncher templates={templates} onGenerate={onGenerate} />}
+        {templates.length > 0 && onGenerate && <details className="launcher-disclosure"><summary>Nueva investigación <span>+</span></summary><ProceduralLauncher templates={templates} onGenerate={onGenerate} /></details>}
         <label className="search-field"><Search size={15} aria-hidden="true" /><span className="sr-only">Buscar alertas</span><input id="alert-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Host, usuario o alerta…" /></label>
         <label className="severity-filter"><SlidersHorizontal size={14} aria-hidden="true" /><span className="sr-only">Filtrar por severidad</span><select value={severity} onChange={(event) => setSeverity(event.target.value)}><option value="all">Todas las severidades</option><option value="critical">Crítica</option><option value="high">Alta</option><option value="medium">Media</option><option value="low">Baja</option></select></label>
       </div>
