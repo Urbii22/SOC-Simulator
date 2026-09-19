@@ -11,7 +11,7 @@ Laboratorio local, seguro y reproducible para practicar triage, investigación y
 - 9 plantillas procedimentales con seeds compartibles, dificultad `easy`/`medium`/`hard` y modo aleatorio sin spoilers.
 - Challenge Mode persistente: Quick (1), Training (3), SOC Shift (5) y sesiones Custom reproducibles por seed.
 - Mapa temporal interactivo: distribución de eventos, filtros por fuente e inspección de intervalos sin revelar la solución.
-- Interfaz Fieldwork: expediente claro, consola de telemetría oscura y diseño adaptable a escritorio y móvil.
+- Interfaz oscura adaptable a escritorio y móvil, con navegación unificada y vistas de entrenamiento, historial y estadísticas centradas.
 - Flujo de analista: cola, severidad, estados, evidencias, notas, preguntas y resolución explicada.
 - Referencias KQL, SPL y Sigma por escenario.
 - API validada, persistencia local y exportación NDJSON.

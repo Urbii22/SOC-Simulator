@@ -28,7 +28,7 @@ export function SignalMap({ events, onExplore }: { events: SecurityEvent[]; onEx
   return (
     <section className="signal-map" aria-label="Mapa temporal de telemetría">
       <header className="signal-map-heading">
-        <div><span className="instrument-label"><ScanLine size={14} /> TELEMETRÍA / VOLUMEN TEMPORAL</span><h2>La señal entre el ruido<span>.</span></h2></div>
+        <div><span className="instrument-label"><ScanLine size={14} /> Actividad del caso</span><h2>Mapa de actividad</h2></div>
         <div className="signal-total"><strong>{model.count.toString().padStart(2, '0')}</strong><span>eventos visibles</span></div>
       </header>
       <div className="signal-source-filters" aria-label="Fuentes de telemetría">
