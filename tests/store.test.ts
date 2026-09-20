@@ -57,8 +57,9 @@ describe('LabStore persistence boundary', () => {
   it('does not mutate in-memory state when persistence fails', () => {
     const directory = temporaryDirectory();
     const blocker = path.join(directory, 'not-a-directory');
-    fs.writeFileSync(blocker, 'block');
     const store = new LabStore(path.join(blocker, 'state.json'));
+    // Introduce the failure after loading: Linux rejects ENOTDIR during startup.
+    fs.writeFileSync(blocker, 'block');
     expect(() => store.update('ssh-brute-force', { notes: 'must not stick' })).toThrow();
     expect(store.get('ssh-brute-force')).toEqual({ status: 'New', notes: '', progress: 0 });
   });
