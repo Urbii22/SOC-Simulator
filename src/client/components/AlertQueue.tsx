@@ -1,9 +1,11 @@
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { FileSearch, FlaskConical, History, Search, SlidersHorizontal, BarChart3 } from 'lucide-react';
 import type { ProceduralTemplateSummary, ScenarioSummary } from '../../domain/types';
 import { SeverityMark } from './Icons';
 import { ProceduralLauncher } from './ProceduralLauncher';
 
 interface Props {
+  onNavigate?: (view: 'cases' | 'challenge' | 'history' | 'stats') => void;
+  activeView?: string;
   scenarios: ScenarioSummary[];
   selectedId: string;
   onSelect: (id: string) => void;
@@ -15,7 +17,7 @@ interface Props {
   onGenerate?: (input: { template?: string; random?: boolean; seed: number; difficulty: 'easy' | 'medium' | 'hard' }) => Promise<void>;
 }
 
-export function AlertQueue({ scenarios, selectedId, onSelect, query, setQuery, severity, setSeverity, templates = [], onGenerate }: Props) {
+export function AlertQueue({ scenarios, selectedId, onSelect, query, setQuery, severity, setSeverity, templates = [], onGenerate, onNavigate, activeView }: Props) {
   const filtered = scenarios.filter((item) => {
     const matchesText = `${item.title} ${item.host} ${item.user}`.toLowerCase().includes(query.toLowerCase());
     return matchesText && (severity === 'all' || item.severity === severity);
@@ -26,8 +28,9 @@ export function AlertQueue({ scenarios, selectedId, onSelect, query, setQuery, s
         <div><span className="eyebrow queue-live"><span className="live-pulse" />Centro de operaciones</span><h2>Cola de alertas</h2></div>
         <span className="count-badge" aria-label={`${filtered.length} alertas`}>{filtered.length}</span>
       </div>
+      {onNavigate && <nav className="side-navigation" aria-label="Centro de operaciones">{([['cases', 'Cola de alertas', FileSearch], ['history', 'Mis investigaciones', History], ['challenge', 'Laboratorio', FlaskConical], ['stats', 'Mi rendimiento', BarChart3]] as const).map(([id, label, Icon]) => <button key={id} aria-current={activeView === id ? 'page' : undefined} className={activeView === id ? 'is-active' : ''} onClick={() => onNavigate(id)}><Icon size={17} />{label}{id === 'cases' && <span>{scenarios.length}</span>}</button>)}</nav>}
+      <div className="recent-label">Alertas recientes <span>{filtered.length}</span></div>
       <div className="filter-stack">
-        {templates.length > 0 && onGenerate && <details className="launcher-disclosure"><summary>Nueva investigación <span>+</span></summary><ProceduralLauncher templates={templates} onGenerate={onGenerate} /></details>}
         <label className="search-field"><Search size={15} aria-hidden="true" /><span className="sr-only">Buscar alertas</span><input id="alert-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Host, usuario o alerta…" /></label>
         <label className="severity-filter"><SlidersHorizontal size={14} aria-hidden="true" /><span className="sr-only">Filtrar por severidad</span><select value={severity} onChange={(event) => setSeverity(event.target.value)}><option value="all">Todas las severidades</option><option value="critical">Crítica</option><option value="high">Alta</option><option value="medium">Media</option><option value="low">Baja</option></select></label>
       </div>
@@ -43,6 +46,7 @@ export function AlertQueue({ scenarios, selectedId, onSelect, query, setQuery, s
         ))}
         {!filtered.length && <div className="empty-state">No hay alertas que coincidan. Ajusta los filtros.</div>}
       </div>
+        {templates.length > 0 && onGenerate && <details className="launcher-disclosure"><summary>Nueva investigación <span>+</span></summary><ProceduralLauncher templates={templates} onGenerate={onGenerate} /></details>}
     </aside>
   );
 }

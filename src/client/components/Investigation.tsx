@@ -29,7 +29,7 @@ export function Investigation({ questions, onSubmit, initialAnswers = emptyAnswe
       <p className="section-lede">Responde usando únicamente la telemetría del caso. La solución se desbloquea al entregar.</p>
       <div className="question-list">{questions.map((question, index) => (
         <fieldset key={question.id} className="question-block">
-          <legend><span>{String(index + 1).padStart(2, '0')}</span>{question.prompt}<small>{question.points} pts</small></legend>
+          <legend><span className="question-number">{String(index + 1).padStart(2, '0')}</span><span className="question-prompt">{question.prompt}</span><small>{question.points} pts</small></legend>
           {question.type === 'single' && <div className="option-grid">{question.options?.map((option) => <label key={option} className="radio-option"><input required type="radio" name={question.id} checked={answers[question.id] === option} onChange={() => answer(question.id, option)} /><span>{option}</span></label>)}</div>}
           {question.type === 'boolean' && <div className="option-grid two"><label className="radio-option"><input required type="radio" name={question.id} checked={answers[question.id] === true} onChange={() => answer(question.id, true)} /><span>Sí, verdadero positivo</span></label><label className="radio-option"><input required type="radio" name={question.id} checked={answers[question.id] === false} onChange={() => answer(question.id, false)} /><span>No, falso positivo</span></label></div>}
           {question.type === 'text' && <input required className="answer-input" value={String(answers[question.id] ?? '')} onChange={(event) => answer(question.id, event.target.value)} placeholder="Escribe una respuesta precisa" />}
