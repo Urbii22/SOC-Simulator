@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react';
 import { Search, TerminalSquare } from 'lucide-react';
 import type { SecurityEvent } from '../../domain/types';
 
-export function EventTable({ events }: { events: SecurityEvent[] }) {
-  const [query, setQuery] = useState('');
+export function EventTable({ events, query: controlledQuery, onQueryChange }: { events: SecurityEvent[]; query?: string; onQueryChange?: (query: string) => void }) {
+  const [localQuery, setLocalQuery] = useState('');
+  const query = controlledQuery ?? localQuery;
+  const setQuery = onQueryChange ?? setLocalQuery;
   const filtered = useMemo(() => {
     const text = query.toLowerCase().trim();
     if (!text) return events;
