@@ -62,6 +62,7 @@ export interface ScenarioDetail extends ScenarioSummary {
   visibleIocs: Ioc[];
   mitre: MitreTechnique[];
   notes: string;
+  review?: GradeResult;
 }
 
 export interface GradeResult {

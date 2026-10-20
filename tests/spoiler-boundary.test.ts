@@ -37,6 +37,7 @@ describe('solution boundary', () => {
 
   it('exports evidence only and keeps internal labels out of NDJSON', async () => {
     const response = await request(app).get('/api/scenarios/mixed-alert-incident/export').expect(200);
+    expect(response.headers['content-type']).toContain('application/x-ndjson');
     const body = response.text ?? (Buffer.isBuffer(response.body) ? response.body.toString('utf8') : String(response.body));
     const events = body.trim().split('\n').map((line) => JSON.parse(line));
     expect(events).toHaveLength(229);
