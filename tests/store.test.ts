@@ -23,9 +23,9 @@ describe('LabStore persistence boundary', () => {
     const cases = Object.fromEntries(Array.from({ length: 103 }, (_, i) => [`proc-random-s${i}-medium`, { status: 'New', notes: 'x'.repeat(10_000), progress: 0 }]));
     fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, cases }, null, 2));
     const store = new LabStore(file);
-    const original = fs.readFileSync(file);
+    const original = fs.readFileSync(file, 'utf8');
     expect(() => store.update('ssh-brute-force', { notes: '界'.repeat(10_000) })).toThrow(LabStateCapacityError);
-    expect(fs.readFileSync(file)).toEqual(original);
+    expect(fs.readFileSync(file, 'utf8')).toEqual(original);
     expect(store.get('ssh-brute-force').notes).toBe('');
     expect(new LabStore(file).get('proc-random-s0-medium').notes).toHaveLength(10_000);
     expect(fs.readdirSync(path.dirname(file))).toEqual(['state.json']);

@@ -55,11 +55,11 @@ describe('recoverable scenario evaluations', () => {
     const file = stateFile();
     const cases = Object.fromEntries(Array.from({ length: 103 }, (_, i) => [i ? `proc-random-s${i}-medium` : 'ssh-brute-force', { status: 'New', notes: 'x'.repeat(10_000), progress: 0 }]));
     fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, cases }, null, 2));
-    const original = fs.readFileSync(file);
+    const original = fs.readFileSync(file, 'utf8');
     const app = createApp({ stateFile: file });
     const failed = await request(app).patch('/api/scenarios/ssh-brute-force').send({ notes: '界'.repeat(10_000) }).expect(507);
     expect(failed.body.error).toContain('Reduce las notas');
-    expect(fs.readFileSync(file)).toEqual(original);
+    expect(fs.readFileSync(file, 'utf8')).toEqual(original);
     const recovered = await request(createApp({ stateFile: file })).get('/api/scenarios/ssh-brute-force').expect(200);
     expect(recovered.body.notes).toBe('x'.repeat(10_000));
   });
