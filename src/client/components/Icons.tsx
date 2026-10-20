@@ -5,5 +5,5 @@ export function SourceIcon({ icon: Icon, label }: { icon: LucideIcon; label: str
 }
 
 export function SeverityMark({ severity }: { severity: string }) {
-  return <span className={`severity-mark severity-${severity}`}><span aria-hidden="true" className="severity-dot" />{severity}</span>;
+  return <span className={`severity-mark severity-${severity}`}><span aria-hidden="true" className="severity-dot" />{{ critical: 'Crítica', high: 'Alta', medium: 'Media', low: 'Baja' }[severity] ?? severity}</span>;
 }

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { scenarioById, scenarioDefinitions } from '../scenarios/definitions.js';
 import { generateScenarioEvents, getAttackEvents } from '../scenarios/generator.js';
 import type { GradeResult, ScenarioDetail, ScenarioSummary, SecurityEvent } from '../domain/types.js';
-import { LabStore } from './store.js';
+import { LabStateCapacityError, LabStore } from './store.js';
 import { syncEventsToElastic } from './elastic.js';
 import { gradeScenarioAnswers, validateSubmittedAnswers } from './scoring.js';
 import { generateProceduralScenario, ProceduralGenerationError, regenerateProceduralScenario, type GeneratedProceduralScenario } from '../procedural/engine.js';
@@ -28,6 +28,16 @@ const localOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 interface ResolvedScenario { definition: ScenarioDefinition; events: SecurityEvent[]; generated?: GeneratedProceduralScenario }
 
+function buildReview(resolved: ResolvedScenario, answers: Record<string, string | boolean>): GradeResult {
+  const { definition, events } = resolved;
+  return {
+    ...gradeScenarioAnswers(definition, answers),
+    explanation: definition.explanation, reasoning: definition.reasoning,
+    timeline: getAttackEvents(definition, events), iocs: definition.iocs, mitre: definition.mitre,
+    queries: definition.queries, responseActions: definition.responseActions, remediationActions: definition.remediationActions,
+  };
+}
+
 function toSummary(resolved: ResolvedScenario, store: LabStore): ScenarioSummary {
   const { definition, events, generated } = resolved;
   const state = store.get(definition.id);
@@ -43,10 +53,13 @@ function toSummary(resolved: ResolvedScenario, store: LabStore): ScenarioSummary
 function toDetail(resolved: ResolvedScenario, store: LabStore): ScenarioDetail {
   const { definition, events } = resolved;
   const state = store.get(definition.id);
+  const review = state.submission && !validateSubmittedAnswers(definition, state.submission)
+    ? buildReview(resolved, state.submission) : undefined;
   return {
     ...toSummary(resolved, store), briefing: definition.briefing, alerts: definition.alerts,
     businessContext: definition.businessContext, users: definition.users, hosts: definition.hosts, events,
-    questions: definition.questions, visibleIocs: [], mitre: [], notes: state.notes,
+    questions: definition.questions, visibleIocs: review?.iocs ?? [], mitre: review?.mitre ?? [], notes: state.notes,
+    ...(review ? { review } : {}),
   };
 }
 
@@ -208,22 +221,15 @@ export function createApp(options: { stateFile?: string; sessionStateFile?: stri
     if (!parsed.success) return response.status(400).json({ error: 'Invalid submission', details: parsed.error.flatten() });
     const submissionError = validateSubmittedAnswers(definition, parsed.data.answers);
     if (submissionError) return response.status(400).json({ error: submissionError });
-    const grade = gradeScenarioAnswers(definition, parsed.data.answers);
-    const result: GradeResult = {
-      ...grade,
-      explanation: definition.explanation, reasoning: definition.reasoning,
-      timeline: getAttackEvents(definition, resolved.events),
-      iocs: definition.iocs, mitre: definition.mitre, queries: definition.queries, responseActions: definition.responseActions,
-      remediationActions: definition.remediationActions,
-    };
-    store.update(definition.id, { progress: 100 });
+    const result = buildReview(resolved, parsed.data.answers);
+    store.update(definition.id, { progress: 100, submission: parsed.data.answers });
     response.json(result);
   });
   app.get('/api/scenarios/:id/export', (request, response) => {
     const resolved = resolveScenario(request.params.id);
     if (!resolved) return response.status(404).json({ error: 'Scenario not found' });
     const body = resolved.events.map((item) => JSON.stringify(item)).join('\n');
-    response.type('application/x-ndjson').attachment(`${resolved.definition.id}.ndjson`).send(body);
+    response.attachment(`${resolved.definition.id}.ndjson`).type('application/x-ndjson').send(body);
   });
   app.post('/api/elastic/sync', async (_request, response, next) => {
     const endpoint = process.env.ELASTICSEARCH_URL;
@@ -247,6 +253,7 @@ export function createApp(options: { stateFile?: string; sessionStateFile?: stri
     void next;
     if (error.status === 400 && error.type === 'entity.parse.failed') return response.status(400).json({ error: 'Invalid JSON body' });
     if (error.status === 413 || error.type === 'entity.too.large') return response.status(413).json({ error: 'Request body too large' });
+    if (error instanceof LabStateCapacityError) return response.status(507).json({ error: error.message });
     if (error instanceof SessionNotFoundError) return response.status(404).json({ error: error.message });
     if (error instanceof SessionConflictError) return response.status(409).json({ error: error.message });
     if (error instanceof ChallengeSessionError) return response.status(error.status).json({ error: error.message });

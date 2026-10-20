@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BarChart3, Command, History, RadioTower, RefreshCw, Shield, Target } from 'lucide-react';
+import { BarChart3, Command, History, RadioTower, RefreshCw, Search, Shield, Target } from 'lucide-react';
 import type { GradeResult, IncidentStatus, ProceduralTemplateSummary, ScenarioDetail, ScenarioSummary } from '../domain/types';
 import { api } from './api';
 import { AlertQueue } from './components/AlertQueue';
@@ -7,6 +7,7 @@ import { IncidentWorkspace } from './components/IncidentWorkspace';
 import { ChallengeCenter } from './components/ChallengeCenter';
 
 type AppView = 'cases' | 'challenge' | 'history' | 'stats';
+const emptyAnswers: Record<string, string | boolean> = {};
 
 export function App() {
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
@@ -18,6 +19,9 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<ProceduralTemplateSummary[]>([]);
   const [appView, setAppView] = useState<AppView>('cases');
+  const [drafts, setDrafts] = useState<Record<string, Record<string, string | boolean>>>({});
+  const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
+  const pendingSubmissions = useRef(new Set<string>());
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
 
@@ -53,9 +57,25 @@ export function App() {
       await api.update(id, change);
       const [, fresh] = await Promise.all([loadList(), api.detail(id)]);
       if (selectedIdRef.current === id) setDetail(fresh);
-    } catch { setError('No se pudo guardar el estado del incidente.'); }
+    } catch (error) { setError(error instanceof Error ? error.message : 'No se pudo guardar el estado del incidente.'); }
   };
-  const submit = async (answers: Record<string, string | boolean>): Promise<GradeResult> => { const result = await api.submit(selectedId, answers); await loadList(); return result; };
+  const submit = async (answers: Record<string, string | boolean>): Promise<GradeResult> => {
+    const id = selectedId;
+    if (pendingSubmissions.current.has(id)) throw new Error('La investigación ya se está evaluando.');
+    pendingSubmissions.current.add(id);
+    setSubmitting((current) => ({ ...current, [id]: true }));
+    try {
+      const result = await api.submit(id, answers);
+      setDetail((current) => current?.id === id ? { ...current, progress: 100, review: result, mitre: result.mitre, visibleIocs: result.iocs } : current);
+      setScenarios((current) => current.map((item) => item.id === id ? { ...item, progress: 100 } : item));
+      setDrafts((current) => { const next = { ...current }; delete next[id]; return next; });
+      setError('');
+      return result;
+    } finally {
+      pendingSubmissions.current.delete(id);
+      setSubmitting((current) => ({ ...current, [id]: false }));
+    }
+  };
   const generate = async (input: { template?: string; random?: boolean; seed: number; difficulty: 'easy' | 'medium' | 'hard' }) => {
     try {
       const generated = await api.generateScenario(input);
@@ -67,9 +87,9 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <header className="topbar"><div className="brand-mark"><Shield size={20} aria-hidden="true" /><div className="brand-copy"><span>watchfloor</span><small>Security operations lab</small></div></div><nav className="app-nav" aria-label="Áreas del laboratorio"><button aria-current={appView === 'cases' ? 'page' : undefined} className={appView === 'cases' ? 'is-active' : ''} onClick={() => setAppView('cases')}><RadioTower size={14} />Casos</button><button aria-current={appView === 'challenge' ? 'page' : undefined} className={appView === 'challenge' ? 'is-active' : ''} onClick={() => setAppView('challenge')}><Target size={14} />Challenge</button><button aria-current={appView === 'history' ? 'page' : undefined} className={appView === 'history' ? 'is-active' : ''} onClick={() => setAppView('history')}><History size={14} />Historial</button><button aria-current={appView === 'stats' ? 'page' : undefined} className={appView === 'stats' ? 'is-active' : ''} onClick={() => setAppView('stats')}><BarChart3 size={14} />Estadísticas</button></nav><div className="operator"><div><span>Turno de entrenamiento</span><strong>{statusText}</strong></div><kbd><Command size={11} /> K</kbd></div></header>
+      <header className="topbar"><div className="brand-mark"><Shield size={20} aria-hidden="true" /><div className="brand-copy"><span>watchfloor</span><small>Security operations lab</small></div></div><nav className="app-nav" aria-label="Áreas del laboratorio"><button aria-current={appView === 'cases' ? 'page' : undefined} className={appView === 'cases' ? 'is-active' : ''} onClick={() => setAppView('cases')}><RadioTower size={14} />Casos</button><button aria-current={appView === 'challenge' ? 'page' : undefined} className={appView === 'challenge' ? 'is-active' : ''} onClick={() => setAppView('challenge')}><Target size={14} />Challenge</button><button aria-current={appView === 'history' ? 'page' : undefined} className={appView === 'history' ? 'is-active' : ''} onClick={() => setAppView('history')}><History size={14} />Historial</button><button aria-current={appView === 'stats' ? 'page' : undefined} className={appView === 'stats' ? 'is-active' : ''} onClick={() => setAppView('stats')}><BarChart3 size={14} />Estadísticas</button></nav><label className="global-search"><Search size={16} /><span className="sr-only">Buscar casos</span><input value={query} onChange={(event) => { setQuery(event.target.value); }} placeholder="Buscar casos, hosts, usuarios…" /><kbd>Ctrl K</kbd></label><div className="operator"><span className="operator-avatar">SOC</span><div><span>Turno de entrenamiento</span><strong>{statusText}</strong></div><kbd><Command size={11} /> K</kbd></div></header>
       {error && <div className="global-error" role="alert">{error}<button onClick={() => location.reload()}><RefreshCw size={14} />Reintentar</button></div>}
-      {loading ? <div className="loading-shell" aria-busy="true"><span /><p>Preparando el turno…</p></div> : appView === 'cases' ? <div className="operations-grid"><AlertQueue scenarios={scenarios} selectedId={selectedId} onSelect={setSelectedId} query={query} setQuery={setQuery} severity={severity} setSeverity={setSeverity} templates={templates} onGenerate={generate} />{detail ? <IncidentWorkspace scenario={detail} onUpdate={update} onSubmit={submit} /> : <div className="empty-workspace">Selecciona una alerta para comenzar.</div>}</div> : <ChallengeCenter section={appView} templates={templates} onError={setError} onNavigateChallenge={() => setAppView('challenge')} />}
+      {loading ? <div className="loading-shell" aria-busy="true"><span /><p>Preparando el turno…</p></div> : <div className="operations-grid"><AlertQueue scenarios={scenarios} selectedId={selectedId} onSelect={(id) => { setSelectedId(id); setAppView('cases'); }} query={query} setQuery={setQuery} severity={severity} setSeverity={setSeverity} templates={templates} onGenerate={async (input) => { await generate(input); setAppView('cases'); }} onNavigate={setAppView} activeView={appView} /><div className="main-surface">{appView === 'cases' ? detail ? <IncidentWorkspace submitting={submitting[detail.id] ?? false} key={detail.id} scenario={detail} onUpdate={update} onSubmit={submit} answers={drafts[detail.id] ?? emptyAnswers} onAnswersChange={(answers) => setDrafts((current) => ({ ...current, [detail.id]: answers }))} /> : <div className="empty-workspace">Selecciona una alerta para comenzar.</div> : null}<div className="view-surface" hidden={appView === 'cases'}><ChallengeCenter section={appView === 'cases' ? 'challenge' : appView} templates={templates} onError={setError} onNavigateChallenge={() => setAppView('challenge')} /></div></div></div>}
     </div>
   );
 }

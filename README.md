@@ -48,6 +48,10 @@ La identidad `password-spray:92817:easy` regenera exactamente la misma definici�
 
 Abre [http://localhost:3001](http://localhost:3001).
 
+El arranque nativo escucha únicamente en `127.0.0.1`. `HOST` permite cambiar explícitamente la dirección de escucha; Docker usa `0.0.0.0` dentro del contenedor y Compose mantiene el puerto publicado sobre `127.0.0.1`. No hay autenticación para uso en redes compartidas.
+
+Las respuestas pendientes se conservan al navegar entre pestañas, casos y áreas de la aplicación durante la visita actual. Al entregar un caso, se guarda la evaluación y puede recuperarse tras recargar o reiniciar el servidor, incluyendo cronología, razonamiento y MITRE. En Challenge, **Guardar progreso** conserva además el borrador para futuras visitas. Las respuestas sin guardar se pierden al recargar la página.
+
 ## Docker
 
 Modo ligero, sólo aplicación:

@@ -21,3 +21,11 @@ Algunas instalaciones endurecidas de npm requieren aprobar los scripts de instal
 Elimina `data/state.json` con la aplicación detenida. Los datasets se regeneran con `npm run generate`.
 
 Si `state.json` está truncado, supera 1 MiB o contiene estados incompatibles, la API se negará a arrancar con `Cannot load lab state` en vez de borrar silenciosamente el progreso. Conserva el fichero para diagnóstico y restaura una copia válida; elimínalo sólo si deseas reiniciar deliberadamente el laboratorio.
+
+## No se puede guardar: almacenamiento de 1 MiB
+
+El servidor comprueba el tamaño UTF-8 antes de escribir y responde HTTP 507 si las notas y evaluaciones superarían el límite. El archivo anterior y el progreso ya guardado permanecen intactos. Reduce notas de otros casos desde la aplicación y vuelve a intentar el guardado; las respuestas pendientes permanecen en el formulario. El límite no se mide en caracteres, por lo que texto multibyte ocupa más espacio.
+
+## Un caso antiguo está completado pero no tiene revisión
+
+Las versiones anteriores sólo guardaban la marca de finalización, no las respuestas entregadas. Conservamos esas notas y estados, pero no inventamos una puntuación: vuelve a entregar el caso una vez para que la revisión completa quede guardada. Las evaluaciones nuevas se recuperan automáticamente al abrir el caso.
