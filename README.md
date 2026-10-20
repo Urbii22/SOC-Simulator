@@ -48,7 +48,7 @@ La identidad `password-spray:92817:easy` regenera exactamente la misma definici�
 
 Abre [http://localhost:3001](http://localhost:3001).
 
-El arranque nativo escucha únicamente en `127.0.0.1`. `HOST` permite cambiar explícitamente la dirección de escucha; Docker usa `0.0.0.0` dentro del contenedor y Compose mantiene el puerto publicado sobre `127.0.0.1`. No hay autenticación para uso en redes compartidas.
+El arranque nativo escucha únicamente en `127.0.0.1`. `HOST` permite cambiar explícitamente la dirección de escucha; Docker usa `0.0.0.0` dentro del contenedor y Compose mantiene el puerto publicado sobre `127.0.0.1`. Para abrir la consola desde otra máquina, añade también la URL exacta que usará el navegador a `ALLOWED_ORIGINS` (por ejemplo `HOST=0.0.0.0 ALLOWED_ORIGINS=http://192.168.1.20:3001`); sin ello la API rechaza con 403 los guardados que no vengan de localhost. No hay autenticación para uso en redes compartidas.
 
 Cada caso recuerda su mesa de trabajo en este navegador: pestaña activa, búsqueda de evidencias, posición de lectura y respuestas pendientes, también tras recargar. Las notas del analista se guardan solas en el servidor con un indicador «Pendiente / Guardando… / Guardado»; si un guardado falla, el error aparece junto a las notas con un botón para reintentar sólo esa operación. Al entregar un caso, se guarda la evaluación y puede recuperarse tras recargar o reiniciar el servidor, incluyendo cronología, razonamiento y MITRE. En Challenge, **Guardar progreso** conserva además el borrador para futuras visitas.
 
