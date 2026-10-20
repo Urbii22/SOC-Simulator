@@ -4,6 +4,10 @@
 
 Comprueba `http://localhost:3001/api/health`. En desarrollo deben estar activos ambos procesos de `npm run dev`. Revisa que los puertos 3001 y 5173 estén libres.
 
+## Guardar o entregar devuelve 403 «Origin not allowed»
+
+La API sólo acepta escrituras desde `localhost`, `127.0.0.1` o `[::1]`. Si la abres por otra dirección (IP de la red local o nombre de host tras cambiar `HOST`), añade esa URL exacta, con esquema y puerto, a `ALLOWED_ORIGINS`; admite varias separadas por comas. El arranque avisa si `HOST` no es loopback y la lista está vacía. No se confía en la cabecera `Host` para evitar ataques de DNS rebinding.
+
 ## Elasticsearch no sincroniza
 
 Espera a que `http://localhost:9200/_cluster/health` responda. Usa `docker compose --profile siem ps` y confirma que el servicio está healthy. Repite `POST /api/elastic/sync`; la operación es idempotente.

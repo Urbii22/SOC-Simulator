@@ -1,7 +1,7 @@
 // @vitest-environment node
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
-import { createApp } from '../src/server/app.js';
+import { createApp, parseAllowedOrigins } from '../src/server/app.js';
 import { scenarioDefinitions } from '../src/scenarios/definitions.js';
 import { generateProceduralScenario } from '../src/procedural/engine.js';
 
@@ -131,6 +131,23 @@ describe('training API', () => {
     await request(app).get('/api/scenarios').query({ severity: 'urgent' }).expect(400, { error: 'Invalid query' });
     await request(app).get('/api/scenarios').query({ search: 'x'.repeat(201) }).expect(400, { error: 'Invalid query' });
     await request(app).get('/api/scenarios/ssh-brute-force/events?q=one&q=two').expect(400, { error: 'Invalid query' });
+  });
+
+  it('accepts writes from explicitly allowed origins and IPv6 loopback only', async () => {
+    const remoteApp = createApp({ allowedOrigins: ['http://192.168.1.20:3001'] });
+    await request(remoteApp).patch('/api/scenarios/ssh-brute-force').set('Origin', 'http://192.168.1.20:3001').send({ notes: 'lan' }).expect(200);
+    await request(remoteApp).patch('/api/scenarios/ssh-brute-force').set('Origin', 'http://192.168.1.21:3001').send({ notes: 'other' }).expect(403);
+    await request(remoteApp).patch('/api/scenarios/ssh-brute-force').set('Origin', 'http://[::1]:5173').send({ notes: 'ipv6' }).expect(200);
+    const cors = await request(remoteApp).get('/api/health').set('Origin', 'http://192.168.1.20:3001').expect(200);
+    expect(cors.headers['access-control-allow-origin']).toBe('http://192.168.1.20:3001');
+  });
+
+  it('parses ALLOWED_ORIGINS strictly', () => {
+    expect(parseAllowedOrigins(undefined)).toEqual([]);
+    expect(parseAllowedOrigins(' http://lab.local:3001 , https://soc.example/ ')).toEqual(['http://lab.local:3001', 'https://soc.example']);
+    expect(() => parseAllowedOrigins('http://lab.local:3001/app')).toThrow(/bare http\(s\) origins/);
+    expect(() => parseAllowedOrigins('*')).toThrow(/invalid origin/);
+    expect(() => parseAllowedOrigins('ftp://lab.local')).toThrow(/bare http\(s\) origins/);
   });
 
   it('only grants browser CORS access to local origins', async () => {
