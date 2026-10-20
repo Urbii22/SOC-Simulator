@@ -50,7 +50,7 @@ Abre [http://localhost:3001](http://localhost:3001).
 
 El arranque nativo escucha únicamente en `127.0.0.1`. `HOST` permite cambiar explícitamente la dirección de escucha; Docker usa `0.0.0.0` dentro del contenedor y Compose mantiene el puerto publicado sobre `127.0.0.1`. No hay autenticación para uso en redes compartidas.
 
-Las respuestas pendientes se conservan al navegar entre pestañas, casos y áreas de la aplicación durante la visita actual. Al entregar un caso, se guarda la evaluación y puede recuperarse tras recargar o reiniciar el servidor, incluyendo cronología, razonamiento y MITRE. En Challenge, **Guardar progreso** conserva además el borrador para futuras visitas. Las respuestas sin guardar se pierden al recargar la página.
+Cada caso recuerda su mesa de trabajo en este navegador: pestaña activa, búsqueda de evidencias, posición de lectura y respuestas pendientes, también tras recargar. Las notas del analista se guardan solas en el servidor con un indicador «Pendiente / Guardando… / Guardado»; si un guardado falla, el error aparece junto a las notas con un botón para reintentar sólo esa operación. Al entregar un caso, se guarda la evaluación y puede recuperarse tras recargar o reiniciar el servidor, incluyendo cronología, razonamiento y MITRE. En Challenge, **Guardar progreso** conserva además el borrador para futuras visitas.
 
 ## Docker
 
