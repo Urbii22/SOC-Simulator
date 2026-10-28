@@ -2,11 +2,11 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { Activity, BookOpen, Check, ChevronRight, CircleAlert, Clock3, Download, FileSearch, LoaderCircle, LockKeyhole, Network, RefreshCw, Save, ShieldAlert, UserRound } from 'lucide-react';
 import type { GradeResult, IncidentStatus, ScenarioDetail } from '../../domain/types';
 import type { Answers, CaseWorkspace, WorkspaceTab } from '../workspace';
-import { EventTable } from './EventTable';
 import { Investigation, Resolution } from './Investigation';
 import { SeverityMark } from './Icons';
 import { LabArtwork } from './LabArtwork';
 import { SignalMap } from './SignalMap';
+import { SplSearch } from './SplSearch';
 
 const statuses: IncidentStatus[] = ['New', 'Investigating', 'Escalated', 'Closed - True Positive', 'Closed - False Positive'];
 
@@ -50,8 +50,8 @@ export function IncidentWorkspace({ scenario, workspace, notesState, initialScro
 
       <div key={tab} ref={scrollArea} className="workspace-scroll" onScroll={(event) => { const offset = event.currentTarget.scrollTop; scrollMemory.current = { ...scrollMemory.current, [tab]: offset }; onScroll(tab, offset); }}>
         {tab === 'overview' && <Overview onReview={() => { setRetrying(false); setTab('investigation'); }} onExplore={() => setTab('evidence')} scenario={scenario} notes={notes} notesState={notesState} setNotes={onNotesChange} saveNotes={onSaveNotes} />}
-        {tab === 'evidence' && <EventTable events={scenario.events} query={workspace.evidenceQuery} onQueryChange={(evidenceQuery) => onWorkspaceChange({ evidenceQuery })} />}
-        {tab === 'investigation' && (scenario.review && !retrying ? <Resolution result={scenario.review} onRetry={() => setRetrying(true)} /> : <><p className="draft-notice">Las respuestas se conservan en este navegador aunque cambies de caso o recargues. Entrega la investigación para guardar la evaluación.</p><Investigation disabled={submitting} questions={scenario.questions} onSubmit={submit} answers={workspace.answers} onAnswersChange={(answers) => onWorkspaceChange({ answers })} /></>)}
+        {tab === 'evidence' && <SplSearch events={scenario.events} query={workspace.evidenceQuery} onQueryChange={(evidenceQuery) => onWorkspaceChange({ evidenceQuery })} />}
+        {tab === 'investigation' && (scenario.review && !retrying ? <Resolution result={scenario.review} onRetry={() => setRetrying(true)} onRunQuery={(evidenceQuery) => onWorkspaceChange({ tab: 'evidence', evidenceQuery })} /> : <><p className="draft-notice">Las respuestas se conservan en este navegador aunque cambies de caso o recargues. Entrega la investigación para guardar la evaluación.</p><Investigation disabled={submitting} questions={scenario.questions} onSubmit={submit} answers={workspace.answers} onAnswersChange={(answers) => onWorkspaceChange({ answers })} /></>)}
       </div>
     </main>
   );

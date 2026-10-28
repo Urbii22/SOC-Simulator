@@ -33,17 +33,17 @@ describe('workspace continuity', () => {
     const { unmount } = render(<App />);
     await screen.findByRole('heading', { name: detail.title });
     fireEvent.click(evidenceTab());
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filtrar eventos' }), { target: { value: events[0].host } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Búsqueda SPL' }), { target: { value: events[0].host } });
     fireEvent.click(screen.getByRole('button', { name: /Segundo caso/ }));
     await screen.findByRole('heading', { name: 'Segundo caso' });
-    expect(screen.queryByRole('textbox', { name: 'Filtrar eventos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Búsqueda SPL' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: new RegExp(detail.title) }));
     await screen.findByRole('heading', { name: detail.title });
-    expect(screen.getByRole('textbox', { name: 'Filtrar eventos' })).toHaveValue(events[0].host);
+    expect(screen.getByRole('textbox', { name: 'Búsqueda SPL' })).toHaveValue(events[0].host);
     unmount();
     render(<App />);
     await screen.findByRole('heading', { name: detail.title });
-    expect(screen.getByRole('textbox', { name: 'Filtrar eventos' })).toHaveValue(events[0].host);
+    expect(screen.getByRole('textbox', { name: 'Búsqueda SPL' })).toHaveValue(events[0].host);
   });
 
   it('autosaves notes, reports failures beside them and retries only that save', async () => {

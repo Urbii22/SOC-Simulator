@@ -22,7 +22,7 @@ function parseWorkspace(value: unknown): CaseWorkspace | undefined {
   if (!isRecord(value)) return undefined;
   const workspace = emptyWorkspace();
   if (tabs.includes(value.tab as WorkspaceTab)) workspace.tab = value.tab as WorkspaceTab;
-  if (typeof value.evidenceQuery === 'string') workspace.evidenceQuery = value.evidenceQuery.slice(0, 500);
+  if (typeof value.evidenceQuery === 'string') workspace.evidenceQuery = value.evidenceQuery.slice(0, 4000);
   if (typeof value.notes === 'string') workspace.notes = value.notes.slice(0, 10_000);
   if (isRecord(value.answers)) {
     for (const [id, answer] of Object.entries(value.answers)) if (typeof answer === 'string' || typeof answer === 'boolean') workspace.answers[id] = answer;

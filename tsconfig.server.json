@@ -11,5 +11,5 @@
     "resolveJsonModule": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src/server", "src/domain", "src/scenarios", "scripts"]
+  "include": ["src/server", "src/domain", "src/scenarios", "src/spl", "scripts"]
 }
