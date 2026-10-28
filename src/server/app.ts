@@ -24,7 +24,17 @@ const updateSchema = z.object({ status: z.enum(statuses).optional(), notes: z.st
 const submitSchema = z.object({ answers: z.record(z.string().regex(/^[a-z][a-z0-9_-]*$/), z.union([z.string().max(2_000), z.boolean()])) }).strict();
 const listQuerySchema = z.object({ severity: z.enum(['all', 'critical', 'high', 'medium', 'low']).default('all'), search: z.string().max(200).default('') }).strict();
 const eventQuerySchema = z.object({ q: z.string().max(2_000).default('') }).strict();
-const localOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+const localOrigin = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
+
+/** Parses ALLOWED_ORIGINS: comma-separated exact origins (scheme://host[:port]) trusted besides loopback. */
+export function parseAllowedOrigins(value: string | undefined): string[] {
+  return (value ?? '').split(',').map((entry) => entry.trim()).filter(Boolean).map((entry) => {
+    let url: URL;
+    try { url = new URL(entry); } catch { throw new Error(`ALLOWED_ORIGINS contains an invalid origin: ${entry}`); }
+    if (!['http:', 'https:'].includes(url.protocol) || url.origin !== entry.replace(/\/$/, '')) throw new Error(`ALLOWED_ORIGINS entries must be bare http(s) origins such as http://192.168.1.20:3001, got: ${entry}`);
+    return url.origin;
+  });
+}
 
 interface ResolvedScenario { definition: ScenarioDefinition; events: SecurityEvent[]; generated?: GeneratedProceduralScenario }
 
@@ -75,7 +85,7 @@ function filterEvents(events: SecurityEvent[], query: string): SecurityEvent[] {
   }));
 }
 
-export function createApp(options: { stateFile?: string; sessionStateFile?: string; now?: () => number } = {}) {
+export function createApp(options: { stateFile?: string; sessionStateFile?: string; now?: () => number; allowedOrigins?: string[] } = {}) {
   const app = express();
   const store = new LabStore(options.stateFile);
   const sessionService = new ChallengeSessionService(new SessionStore(options.sessionStateFile), options.now);
@@ -99,12 +109,15 @@ export function createApp(options: { stateFile?: string; sessionStateFile?: stri
   };
   let elasticSyncInProgress = false;
   app.disable('x-powered-by');
+  // The Host header is not trusted (DNS rebinding); remote access needs explicit ALLOWED_ORIGINS.
+  const allowedOrigins = new Set(options.allowedOrigins ?? []);
+  const isAllowedOrigin = (origin: string) => localOrigin.test(origin) || allowedOrigins.has(origin);
   app.use(cors({ origin(origin, callback) {
-    callback(null, origin === undefined || localOrigin.test(origin));
+    callback(null, origin === undefined || isAllowedOrigin(origin));
   } }));
   app.use((request, response, next) => {
     const origin = request.headers.origin;
-    if (origin && !localOrigin.test(origin) && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+    if (origin && !isAllowedOrigin(origin) && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
       return response.status(403).json({ error: 'Origin not allowed' });
     }
     next();
