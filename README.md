@@ -13,7 +13,8 @@ Laboratorio local, seguro y reproducible para practicar triage, investigación y
 - Mapa temporal interactivo: distribución de eventos, filtros por fuente e inspección de intervalos sin revelar la solución.
 - Interfaz oscura adaptable a escritorio y móvil, con navegación unificada y vistas de entrenamiento, historial y estadísticas centradas.
 - Flujo de analista: cola, severidad, estados, evidencias, notas, preguntas y resolución explicada.
-- Referencias KQL, SPL y Sigma por escenario.
+- Consola de búsqueda SPL tipo Splunk sobre las evidencias de cada caso: `stats`, `eval`, `where`, `timechart`, `transaction`, `rex` y más, con barra de campos y errores explicados ([guía](docs/SPL.md)).
+- Referencias KQL, SPL y Sigma por escenario; las SPL se ejecutan desde la revisión del caso.
 - API validada, persistencia local y exportación NDJSON.
 - Elasticsearch/Kibana opcionales mediante Docker Compose.
 - Tests unitarios, de API, componentes, reproducibilidad, IOC y capacidad de respuesta.
@@ -124,6 +125,7 @@ El navegador recibe metadatos, preguntas y evidencias, pero no claves de respues
 src/client/       consola React y componentes
 src/domain/       contratos compartidos
 src/scenarios/    definiciones y generador determinista
+src/spl/          motor SPL (parser y ejecución en memoria)
 src/server/       API, persistencia e integración Elastic
 scripts/          generación offline de datasets
 tests/            unit, API y componentes
@@ -157,6 +159,7 @@ Los cuerpos de escritura se validan con Zod y tienen límites de tamaño. La API
 
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Guía del estudiante](docs/STUDENT_GUIDE.md)
+- [Búsqueda SPL](docs/SPL.md)
 - [Guía del instructor](docs/INSTRUCTOR_GUIDE.md)
 - [Crear escenarios](docs/CREATING_SCENARIOS.md)
 - [Generación procedural](docs/PROCEDURAL_SCENARIOS.md)

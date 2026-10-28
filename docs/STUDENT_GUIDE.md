@@ -4,7 +4,7 @@
 
 1. Lee el contexto de negocio y formula una hipótesis sin asumir que la alerta es correcta.
 2. Establece el comportamiento normal del usuario y el activo antes de la ventana sospechosa.
-3. Construye una timeline y pivota por identidad, host, sesión, proceso, IP y destino.
+3. Construye una timeline y pivota por identidad, host, sesión, proceso, IP y destino. En **Evidencias** tienes una consola SPL: empieza por `index=soc | stats count by source` y ve acotando (ver [Búsqueda SPL](SPL.md)).
 4. Separa hechos demostrados, hipótesis e indicadores. Un IOC aislado no prueba un incidente.
 5. Determina alcance: activos, cuentas, credenciales, persistencia, movimiento lateral y salida de datos.
 6. Clasifica cada alerta como verdadera, falsa o parte de un incidente mixto; asigna severidad según impacto.

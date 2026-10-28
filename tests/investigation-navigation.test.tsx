@@ -50,7 +50,7 @@ describe('investigation navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Investigación' }));
     fillAnswers();
     fireEvent.click(screen.getByRole('button', { name: `Evidencias ${events.length}` }));
-    expect(screen.getByRole('textbox', { name: 'Filtrar eventos' })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Búsqueda SPL' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Investigación' }));
     expect(screen.getByRole('textbox', { name: definition.questions[0].prompt })).toHaveValue(String(correctAnswers.anchor));
     fireEvent.click(screen.getByRole('button', { name: /Segundo caso/ }));
